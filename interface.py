@@ -18,9 +18,9 @@ def main():
                 table_name = parts[from_index+1]
                 columns = parts[1:from_index]
                 conditions = None
-                if "WHERE" in parts:
-                    where_index = parts.index("WHERE")
-                    conditions = parts[where_index + 1:]
+                if "WHEN" in parts:
+                    when_index = parts.index("WHEN")
+                    conditions = parts[when_index + 1:]
 
                 db.get(table_name, columns, conditions)
 
