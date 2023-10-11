@@ -15,8 +15,8 @@ class Database:
     #         raise ValueError("Number of columns doesn't match.")
     #     self.tables[table_name]["data"].append(values)
 
-    def get(self, table_name, columns, conditions=None):
-        print(f"output columns {columns} from table {table_name} with conditions {conditions}")
+    def get(self, table_name, columns, connect_table, on_condition, conditions=None):
+        print(f"output columns {columns} from table {table_name} connect with table {connect_table} on {on_condition} with conditions {conditions}")
         # if table_name not in self.tables:
         #     raise ValueError(f"Table {table_name} doesn't exist.")
         # data = self.tables[table_name]["data"]
