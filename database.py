@@ -8,12 +8,13 @@ class Database:
     #         raise ValueError(f"Table {table_name} already exists.")
     #     self.tables[table_name] = {"columns": columns, "data": []}
 
-    # def insert(self, table_name, values):
-    #     if table_name not in self.tables:
-    #         raise ValueError(f"Table {table_name} doesn't exist.")
-    #     if len(values) != len(self.tables[table_name]["columns"]):
-    #         raise ValueError("Number of columns doesn't match.")
-    #     self.tables[table_name]["data"].append(values)
+    def insert(self, table_name, values):
+         if table_name not in self.tables:
+             print(f"Table {table_name} doesn't exist.")
+         if len(values) != len(self.tables[table_name]):
+             print("Number of columns doesn't match.")
+         for i in range(self.tables[table_name]):
+             self.tables[table_name][i].append(values[i])
 
     def get(self, table_name, columns, connect_table, on_condition, conditions=None, grouping=None, ordering=None, order_by=None):
         print(f"output columns {columns} from table {table_name} connect with table {connect_table} on {on_condition} with conditions {conditions} gather by {grouping} order by {order_by} in {ordering} order")
