@@ -99,6 +99,42 @@ def main():
             #     table_name = parts[2]
             #     values = eval("[" + query.split("VALUES")[1].strip() + "]")
             #     db.insert(table_name, values)
+            
+            elif query.startswith("PUT"):
+                 # Parse and execute PUT IN statement
+                 # Example: PUT 1, 'Alice' IN users
+                 parts = query.split(" ")
+                 IN_index = parts.index("IN")
+                 table_name = parts[IN_index+1]
+                 # parse all the values
+                 values = [i.replace(",", "") for i in parts[1:IN_index]]
+                 db.insert(table_name, values)
+
+            elif query.startswith("DROP"):
+                 # Parse and execute DROP sth FROM table WHEN statement
+                 # Example: DROP name FROM table WHEN id = 100
+                 parts = query.split(" ")
+                 FROM_index = parts.index("FROM")
+                 table_name = parts[FROM_index+1]
+                 # Parse the items
+                 items = parts[i.replace(",","") for i in parts[1:from_index]]
+                 conditions = None
+                 if "WHEN" in parts:
+                     WHEN_index = parts.index("WHEN")
+                     conditions = parts[WHEN_index+1:]
+                 db.delete(table_name, items, conditions)
+
+            elif query.startswith("CHANGE"):
+                 # Parse and execute CHANGE table WITH values WHEN
+                 # Example: CHANGE users WITH name = steve
+                 parts = query.split(" ")
+                 WITH_index = parts.index("WITH")
+                 table_name = parts[1]
+                 WHEN_index = parts.index("WHEN")
+                 values = parts[i.replace(",", "") for i in parts[WITH_index+1: WHEN_index]]
+                 conditions = parts[WHEN_index+1:]
+                 db.update(table_name, values, conditions)
+            
             else:
                 print("Invalid query.")
 
