@@ -16,6 +16,20 @@ class Database:
          for i in range(self.tables[table_name]):
              self.tables[table_name][i].append(values[i])
 
+    def delete(self, table_name, items, condition):
+        if table_name not in self.tables:
+            print(f"Table {table_name} doesn't exist.")
+        if not condition:
+            for ele in items:
+                self.tables[table_name][ele] = None
+        else:
+            #evaluate_conditions()
+
+    def update(self, table_name, values, condition):
+        if table_name not in self.tables:
+            print(f"Table {table_name} doesn't exist.")
+            #evaluate_conditions()
+
     def get(self, table_name, columns, connect_table, on_condition, conditions=None, grouping=None, ordering=None, order_by=None):
         print(f"output columns {columns} from table {table_name} connect with table {connect_table} on {on_condition} with conditions {conditions} gather by {grouping} order by {order_by} in {ordering} order")
         # if table_name not in self.tables:
