@@ -9,7 +9,7 @@ class Database:
     #     self.tables[table_name] = {"columns": columns, "data": []}
 
     def insert(self, table_name, values):
-        print(f"output values {values} from table {table_name}")
+        print(f"Put values {values} to table {table_name}")
         if table_name not in self.tables:
             print(f"Table {table_name} doesn't exist.")
         if len(values) != len(self.tables[table_name]):
@@ -18,7 +18,7 @@ class Database:
             self.tables[table_name][i].append(values[i])
 
     def delete(self, table_name, items, condition):
-        print(f"output items {items} from table {table_name} on condition {condition}")
+        print(f"delete items {items} from table {table_name} on condition {condition}")
         if table_name not in self.tables:
             print(f"Table {table_name} doesn't exist.")
         if not condition:
@@ -28,7 +28,7 @@ class Database:
             #evaluate_conditions()
 
     def update(self, table_name, values, condition):
-        print(f"output values {values} from table {table_name} on condition {condition}")
+        print(f"update values {values} from table {table_name} on condition {condition}")
         if table_name not in self.tables:
             print(f"Table {table_name} doesn't exist.")
             #evaluate_conditions()
