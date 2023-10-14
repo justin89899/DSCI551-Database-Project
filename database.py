@@ -24,7 +24,7 @@ class Database:
         if not condition:
             for ele in items:
                 self.tables[table_name][ele] = None
-        else:
+        #else:
             #evaluate_conditions()
 
     def update(self, table_name, values, condition):
