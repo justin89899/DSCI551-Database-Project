@@ -40,7 +40,11 @@ def main():
                 if "CONNECT" in parts:
                     connect_index = parts.index("CONNECT")
                     connect_table = parts[connect_index + 1]
-                    on_condition = parts[connect_index + 3:connect_index + 6]
+                    #on_condition = parts[connect_index + 3:connect_index + 6]
+                    if key_words_index[key_words_index.index(connect_index)+1] == "end":
+                        on_condition = parts[connect_index + 3:]
+                    else:
+                        on_condition = parts[connect_index + 3:key_words_index[key_words_index.index(connect_index)+1]]
                 # parse condition (WHEN)
                 conditions = None
                 if "WHEN" in parts:
@@ -48,8 +52,6 @@ def main():
                     if key_words_index[key_words_index.index(when_index)+1] == "end":
                         conditions = parts[when_index + 1:]
                     else:
-                        print(key_words_index.index(when_index)+1)
-                        print(key_words_index[key_words_index.index(when_index)+1])
                         conditions = parts[when_index + 1:key_words_index[key_words_index.index(when_index)+1]]
                 
                 # parse grouping (GATHER BY)    
@@ -75,7 +77,6 @@ def main():
                     ordering_index = parts.index("DESCEND_BY")
                     ordering = "DSC"
                     if key_words_index[key_words_index.index(ordering_index)+1] == "end":
-                        print('herer')
                         order_by = parts[ordering_index + 1:]
                     else:
                         order_by = parts[ordering_index + 1:key_words_index[key_words_index.index(ordering_index)+1]]
