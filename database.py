@@ -9,14 +9,16 @@ class Database:
     #     self.tables[table_name] = {"columns": columns, "data": []}
 
     def insert(self, table_name, values):
-         if table_name not in self.tables:
-             print(f"Table {table_name} doesn't exist.")
-         if len(values) != len(self.tables[table_name]):
-             print("Number of columns doesn't match.")
-         for i in range(self.tables[table_name]):
-             self.tables[table_name][i].append(values[i])
+        print(f"output values {values} from table {table_name}")
+        if table_name not in self.tables:
+            print(f"Table {table_name} doesn't exist.")
+        if len(values) != len(self.tables[table_name]):
+            print("Number of columns doesn't match.")
+        for i in range(self.tables[table_name]):
+            self.tables[table_name][i].append(values[i])
 
     def delete(self, table_name, items, condition):
+        print(f"output items {items} from table {table_name} on condition {condition}")
         if table_name not in self.tables:
             print(f"Table {table_name} doesn't exist.")
         if not condition:
@@ -26,6 +28,7 @@ class Database:
             #evaluate_conditions()
 
     def update(self, table_name, values, condition):
+        print(f"output values {values} from table {table_name} on condition {condition}")
         if table_name not in self.tables:
             print(f"Table {table_name} doesn't exist.")
             #evaluate_conditions()
