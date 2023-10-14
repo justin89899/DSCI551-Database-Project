@@ -115,7 +115,7 @@ def main():
                  FROM_index = parts.index("FROM")
                  table_name = parts[FROM_index+1]
                  # Parse the items
-                 items = parts[i.replace(",","") for i in parts[1:from_index]]
+                 items = [i.replace(",", "") for i in parts[1:FROM_index]]
                  conditions = None
                  if "WHEN" in parts:
                      WHEN_index = parts.index("WHEN")
@@ -128,7 +128,7 @@ def main():
                  WITH_index = parts.index("WITH")
                  table_name = parts[1]
                  WHEN_index = parts.index("WHEN")
-                 values = parts[i.replace(",", "") for i in parts[WITH_index+1: WHEN_index]]
+                 values = [i.replace(",", "") for i in parts[WITH_index + 1: WHEN_index]]
                  conditions = parts[WHEN_index+1:]
                  db.update(table_name, values, conditions)
             
