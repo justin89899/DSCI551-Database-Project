@@ -8,8 +8,12 @@ class Database:
     #         raise ValueError(f"Table {table_name} already exists.")
     #     self.tables[table_name] = {"columns": columns, "data": []}
 
-    def insert(self, table_name, values):
-        print(f"Put values {values} to table {table_name}")
+    def insert(self, table_info, values):
+        
+        table_name = table_info[0]
+        table_columns = " ".join(table_info[1:]).replace("(","").replace(")","").replace(",","")
+        table_columns = table_columns.split(" ")
+        print(f"Put values {values} to table {table_name} on columns {table_columns}")
         if table_name not in self.tables:
             print(f"Table {table_name} doesn't exist.")
         if len(values) != len(self.tables[table_name]):

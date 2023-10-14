@@ -105,7 +105,7 @@ def main():
                  # Parse and execute PUT IN statement
                  # Example: PUT 1, 'Alice' IN users
                  IN_index = parts.index("IN")
-                 table_name = parts[IN_index+1]
+                 table_name = parts[IN_index+1:]
                  # parse all the values
                  values = [i.replace(",", "") for i in parts[1:IN_index]]
                  db.insert(table_name, values)
@@ -114,13 +114,14 @@ def main():
                  # Parse and execute DROP sth FROM table WHEN statement
                  # Example: DROP name FROM table WHEN id = 100
                  FROM_index = parts.index("FROM")
-                 table_name = parts[FROM_index+1]
-                 # Parse the items
-                 items = [i.replace(",", "") for i in parts[1:FROM_index]]
                  conditions = None
                  if "WHEN" in parts:
-                     WHEN_index = parts.index("WHEN")
-                     conditions = parts[WHEN_index+1:]
+                    WHEN_index = parts.index("WHEN")
+                    table_name = parts[FROM_index+1:WHEN_index]
+                    conditions = parts[WHEN_index+1:]
+                 # Parse the items
+                 items = [i.replace(",", "") for i in parts[1:FROM_index]]
+
                  db.delete(table_name, items, conditions)
 
             elif query.startswith("CHANGE"):
