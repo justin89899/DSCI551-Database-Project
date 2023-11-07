@@ -40,25 +40,32 @@ def main():
 
                     # parse all the tables
                     i = 0
-                    tables = []
-                    while parts[from_index+1+i]:
+                    table = parts[from_index+1+i]
+                    # tables = []
+                    # while parts[from_index+1+i]:
 
-                        tables.append(parts[from_index+1+i])
-                        if parts[from_index+1+i].endswith(","):
-                            i = i + 1
-                        else:
-                            break
+                    #     tables.append(parts[from_index+1+i])
+                    #     if parts[from_index+1+i].endswith(","):
+                    #         i = i + 1
+                    #     else:
+                    #         break
                     
                     # parse join (CONNECT)
                     connect_table = None
+                    on_condition = None
                     if "CONNECT" in parts:
-                        connect_index = parts.index("CONNECT")
-                        connect_table = parts[connect_index + 1]
-                        #on_condition = parts[connect_index + 3:connect_index + 6]
-                        if key_words_index[key_words_index.index(connect_index)+1] == "end":
-                            on_condition = parts[connect_index + 3:]
-                        else:
-                            on_condition = parts[connect_index + 3:key_words_index[key_words_index.index(connect_index)+1]]
+                        connect_indexes = [i for i,p in enumerate(parts) if p=="CONNECT"]
+                        #connect_index = parts.index("CONNECT")
+                        #print(connect_index)
+                        connect_table = []
+                        on_condition = []
+                        for connect_index in connect_indexes:
+                            connect_table.append(parts[connect_index + 1])
+                            #on_condition = parts[connect_index + 3:connect_index + 6]
+                            if key_words_index[key_words_index.index(connect_index)+1] == "end":
+                                on_condition.append(parts[connect_index + 3:])
+                            else:
+                                on_condition.append(parts[connect_index + 3:key_words_index[key_words_index.index(connect_index)+1]])
                     # parse condition (WHEN)
                     conditions = None
                     if "WHEN" in parts:
@@ -95,7 +102,7 @@ def main():
                         else:
                             order_by = parts[ordering_index + 1:key_words_index[key_words_index.index(ordering_index)+1]]
                         
-                    db.get(tables, columns, connect_table, on_condition, conditions, grouping, ordering, order_by)
+                    db.get(table, columns, connect_table, on_condition, conditions, grouping, ordering, order_by)
                 
                 elif query.startswith("PUT"):
                     # Parse and execute PUT IN statement

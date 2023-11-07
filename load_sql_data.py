@@ -1,4 +1,5 @@
 import csv
+import json
 load_customer = False
 load_ticket = True
 
@@ -10,7 +11,7 @@ def load_all():
         csvreader = csv.reader(csvfile)
         next(csvreader)  # Skip the first row
         table_num = -1
-
+        customer_table_info = {}
         customer_unique = []
         customer_id_count = 0
         # Iterate over each row in the CSV file
@@ -21,7 +22,7 @@ def load_all():
                     # Create and write to the CSV file
                     with open(table_csv_filename, mode='w', newline='') as file:
                         writer = csv.writer(file)
-                        
+                        customer_table_info[table_num] = len(rows)-1
                         # Write rows to the CSV file
                         for r in rows:
                             writer.writerow(r)
@@ -43,9 +44,17 @@ def load_all():
         # Create and write to the CSV file
         with open(table_csv_filename, mode='w', newline='') as file:
             writer = csv.writer(file)
+            customer_table_info[table_num] = len(rows)-1
             # Write rows to the CSV file
             for row in rows:
                 writer.writerow(row)
+    # Define the name of the JSON file
+    json_filename = 'sql_tables/Customer/metadata.json'
+    # Open the file for writing
+    with open(json_filename, 'w') as file:
+        # Use json.dump() to write the data to a file
+        json.dump(customer_table_info, file, indent=4)  # 'indent=4' for pretty-printing
+
     # write to product tables
     # Open the CSV file
     with open('dataset/customer_support_ticket_dataset/customer_support_tickets.csv', 'r') as csvfile:
@@ -53,7 +62,7 @@ def load_all():
         csvreader = csv.reader(csvfile)
         next(csvreader)  # Skip the first row
         table_num = -1
-
+        product_table_info = {}
         product_unique = []
         product_id_count = 0
         # Iterate over each row in the CSV file
@@ -63,7 +72,7 @@ def load_all():
                     # Create and write to the CSV file
                     with open(table_csv_filename, mode='w', newline='') as file:
                         writer = csv.writer(file)
-                        
+                        product_table_info[table_num] = len(rows)-1
                         # Write rows to the CSV file
                         for r in rows:
                             writer.writerow(r)
@@ -72,7 +81,7 @@ def load_all():
                 table_csv_filename = f'sql_tables/Product/table_{table_num}.csv'
                 # Define the table columns
                 rows = [
-                    ["product_id", "name"]
+                    ["product_id", "p_name"]
                 ]
             
             # extract the column we need
@@ -85,10 +94,16 @@ def load_all():
         # Create and write to the CSV file
         with open(table_csv_filename, mode='w', newline='') as file:
             writer = csv.writer(file)
+            product_table_info[table_num] = len(rows)-1
             # Write rows to the CSV file
             for row in rows:
                 writer.writerow(row)
-
+            # Define the name of the JSON file
+    json_filename = 'sql_tables/Product/metadata.json'
+    # Open the file for writing
+    with open(json_filename, 'w') as file:
+        # Use json.dump() to write the data to a file
+        json.dump(product_table_info, file, indent=4)  # 'indent=4' for pretty-printing
 
 
     # write to ticket tables
@@ -98,7 +113,7 @@ def load_all():
         csvreader = csv.reader(csvfile)
         next(csvreader)  # Skip the first row
         table_num = -1
-
+        ticket_table_info = {}
         # Iterate over each row in the CSV file
         for i, row in enumerate(csvreader):
             
@@ -107,7 +122,7 @@ def load_all():
                     # Create and write to the CSV file
                     with open(table_csv_filename, mode='w', newline='') as file:
                         writer = csv.writer(file)
-                        
+                        ticket_table_info[table_num] = len(rows)-1
                         # Write rows to the CSV file
                         for r in rows:
                             writer.writerow(r)
@@ -138,9 +153,14 @@ def load_all():
         # Create and write to the CSV file
         with open(table_csv_filename, mode='w', newline='') as file:
             writer = csv.writer(file)
+            ticket_table_info[table_num] = len(rows)-1
             # Write rows to the CSV file
             for row in rows:
                 writer.writerow(row)
-
+    json_filename = 'sql_tables/Ticket/metadata.json'
+    # Open the file for writing
+    with open(json_filename, 'w') as file:
+        # Use json.dump() to write the data to a file
+        json.dump(ticket_table_info, file, indent=4)  # 'indent=4' for pretty-printing
 
 load_all()
