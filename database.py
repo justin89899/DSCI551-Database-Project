@@ -60,6 +60,8 @@ class SQL_Database:
         def like(string, sql_like_pattern):
             regex = sql_like_to_regex(sql_like_pattern)
             return regex.match(string) is not None
+        if not targets: ## no conditions
+            return True
         
         pass_condition = True
         i = 0
@@ -142,8 +144,8 @@ class SQL_Database:
         if not valid_condition:
             print("Error: Invalid condition.")
             return
-        print(self.check_condition(condition_targets,condition_operators,condition_comparisons,condition_logics))
-        return
+        
+        
         ##### Projection
         # check table name and columns
         if table not in self.tables:
@@ -162,12 +164,17 @@ class SQL_Database:
         print(column_print)
         print('-'*len(column_print))
         target_index = [self.tables[table].index(c) for c in columns]
+        condition_target_index = [self.tables[table].index(ct) for ct in condition_targets]
         for table_chunk_num in metadata:
             with open(f'sql_tables/{table}/table_{table_chunk_num}.csv', 'r') as csvfile:
                 # Create a CSV reader object
                 csvreader = csv.reader(csvfile)
                 next(csvreader)
                 for row in csvreader:
+                    input_targets = []
+                    if not self.check_condition([row[cti] for cti in condition_target_index], condition_operators, condition_comparisons, condition_logics):
+                        continue
+
                     values_to_print = []
                     for ti in target_index:
                         values_to_print.append(row[ti])
