@@ -164,10 +164,10 @@ def load_all():
         json.dump(ticket_table_info, file, indent=4)  # 'indent=4' for pretty-printing
 
     #nosql
-    input_file_path = 'roam_prescription_based_prediction.jsonl'
+    input_file_path = 'dataset/roam_prescription_based_prediction.jsonl'
 
     #cms_prescription_counts 0-2000
-    output_file_path = 'first_2000_cms_prescription_counts.json'
+    output_file_path = 'nosql_tables/cms_prescription_counts/first_2000_cms_prescription_counts.json'
     # Open the input file and read the JSON objects line by line
     records = []
     with open(input_file_path, 'r') as file:
@@ -187,7 +187,7 @@ def load_all():
         json.dump(records, file, indent=4)
 
     #cms_prescription_counts 2000-4000
-    output_file_path = '2000_to_4000_cms_prescription_counts.json'
+    output_file_path = 'nosql_tables/cms_prescription_counts/2000_to_4000_cms_prescription_counts.json'
     records_to_extract = 2000  # Number of records to extract
     start_record_index = 2000  # Starting index, zero-based
     # Open the input file and read the JSON objects line by line
@@ -207,13 +207,13 @@ def load_all():
                 break
             except json.JSONDecodeError as e:
                 print(f"An error occurred while parsing JSON: {e}")
-                break
+                break 
     # Write the 2000 to 4000 'cms_prescription_counts' records to a new file
     with open(output_file_path, 'w') as file:
         json.dump(extracted_records, file, indent=4)
-
+    
     #cms_prescription_counts 4000-6000
-    output_file_path = '4000_to_6000_cms_prescription_counts.json'
+    output_file_path = 'nosql_tables/cms_prescription_counts/4000_to_6000_cms_prescription_counts.json'
     records_to_extract = 2000  # Number of records to extract
     start_record_index = 4000  # Starting index, zero-based
     # Open the input file and read the JSON objects line by line
@@ -239,7 +239,7 @@ def load_all():
         json.dump(extracted_records, file, indent=4)
 
     #npi 0-2000
-    output_file_path = 'first_2000_npi.json'
+    output_file_path = 'nosql_tables/npi/first_2000_npi.json'
     # Open the input file and read the JSON objects line by line
     records = []
     with open(input_file_path, 'r') as file:
@@ -259,7 +259,7 @@ def load_all():
         json.dump(records, file, indent=4)
 
     #npi 2000-4000
-    output_file_path = '2000_to_4000_npi.json'
+    output_file_path = 'nosql_tables/npi/2000_to_4000_npi.json'
     records_to_extract = 2000  # Number of records to extract
     start_record_index = 2000  # Starting index, zero-based
     # Open the input file and read the JSON objects line by line
@@ -285,7 +285,7 @@ def load_all():
         json.dump(extracted_records, file, indent=4)
 
     #npi 4000-6000
-    output_file_path = '4000_to_6000_npi.json'
+    output_file_path = 'nosql_tables/npi/4000_to_6000_npi.json'
     records_to_extract = 2000  # Number of records to extract
     start_record_index = 4000  # Starting index, zero-based
     # Open the input file and read the JSON objects line by line
@@ -311,7 +311,7 @@ def load_all():
         json.dump(extracted_records, file, indent=4)
 
     #provider_variables 0-2000
-    output_file_path = 'first_2000_provider_variables.json'
+    output_file_path = 'nosql_tables/provider_variables/first_2000_provider_variables.json'
     # Open the input file and read the JSON objects line by line
     records = []
     with open(input_file_path, 'r') as file:
@@ -331,7 +331,7 @@ def load_all():
         json.dump(records, file, indent=4)
 
     #provider_variables 2000-4000
-    output_file_path = '2000_to_4000_provider_variables.json'
+    output_file_path = 'nosql_tables/provider_variables/2000_to_4000_provider_variables.json'
     records_to_extract = 2000  # Number of records to extract
     start_record_index = 2000  # Starting index, zero-based
     # Open the input file and read the JSON objects line by line
@@ -357,7 +357,7 @@ def load_all():
          json.dump(extracted_records, file, indent=4)
 
     #provider_variables 4000-6000
-    output_file_path = '4000_to_6000_provider_variables.json'
+    output_file_path = 'nosql_tables/provider_variables/4000_to_6000_provider_variables.json'
     records_to_extract = 2000  # Number of records to extract
     start_record_index = 4000  # Starting index, zero-based
     # Open the input file and read the JSON objects line by line
