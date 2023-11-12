@@ -1,6 +1,7 @@
 ## this is our main program
 import json
 from collections import defaultdict
+import os
 import csv
 
 class SQL_Database:
@@ -92,7 +93,7 @@ class noSQL_Database:
         }
         self.records = []
 
-    def insert(self, table_info, values):
+    def insert(self, data):
         if self.validate(data):
             self.records.append(data)
         else:
@@ -132,14 +133,44 @@ class noSQL_Database:
         #     for ele in items:
         #         self.tables[table_name][ele] = None
 
-    def update(self, update_data, condition):
-        for record in self.records:
-            if all(record.get(field) == value for field, value in condition.items()):
-                for key, value in update_data.items():
-                    record[key] = value
-        # print(f"update values {values} from table {table_name} on condition {condition}")
-        # if table_name not in self.tables:
-        #     print(f"Table {table_name} doesn't exist.")
+    def update(self, new_data, unique_id_field, update_conditions=None):
+        updated = False
+        if unique_id_field = 'npi':
+            file_paths = ['nosql_tables/npi/first_2000_npi.json', 'nosql_tables/npi/2000_to_4000_npi.json', 'nosql_tables/npi/4000_to_6000_npi.json']
+        if unique_id_field = 'cms_prescription_counts':
+            file_paths = ['nosql_tables/cms_prescription_counts/first_2000_cms_prescription_counts.json', 'nosql_tables/cms_prescription_counts/2000_to_4000_cms_prescription_counts.json', 'nosql_tables/cms_prescription_counts/4000_to_6000_cms_prescription_counts.json']
+        if unique_id_field = 'provider_variables':
+            file_paths = ['nosql_tables/provider_variables/first_2000_provider_variables.json', 'nosql_tables/provider_variables/2000_to_4000_provider_variables.json', 'nosql_tables/provider_variables/4000_to_6000_provider_variables.json']
+        for file_path in file_paths:
+            # Proceed only if the file exists to avoid creating a new one unnecessarily
+            if not os.path.isfile(file_path):
+                continue
+
+            temp_file_path = file_path + '.tmp'  # Temporary file for updates
+            with open(file_path, 'r') as file, open(temp_file_path, 'w') as temp_file:
+                for line in file:
+                    record = json.loads(line)
+                    # Check if the record matches the unique identifier and update conditions
+                    if (record.get(unique_id_field) == new_data.get(unique_id_field) and
+                            (update_conditions is None or all(record.get(cond) == val for cond, val in update_conditions.items()))):
+                        record.update(new_data)  # Update the record with new data
+                        updated = True
+                    # Write the original or updated record to the temporary file
+                    temp_file.write(json.dumps(record) + '\n')
+
+            # Replace the original file with the updated temporary file
+            os.replace(temp_file_path, file_path)
+        
+            # If we updated a record, no need to check the remaining files
+            if updated:
+                break
+
+        if not updated:
+            # If the record was not found and updated, you can decide to append it to one of the files or raise an error
+            # For example, appending to the first file:
+            with open(file_paths[0] + '.tmp', 'a') as temp_file:  # Open in append mode
+                temp_file.write(json.dumps(new_data) + '\n')
+            os.replace(file_paths[0] + '.tmp', file_paths[0])
 
     def get(self, conditions=None, order_by=None, limit=None):
         # print(f"output columns {columns} from table {table_name} connect with table {connect_table} on {on_condition} with conditions {conditions} gather by {grouping} order by {order_by} in {ordering} order")
