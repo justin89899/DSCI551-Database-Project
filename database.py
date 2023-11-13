@@ -172,27 +172,123 @@ class noSQL_Database:
                 temp_file.write(json.dumps(new_data) + '\n')
             os.replace(file_paths[0] + '.tmp', file_paths[0])
 
-    def get(self, conditions=None, order_by=None, limit=None):
-        # print(f"output columns {columns} from table {table_name} connect with table {connect_table} on {on_condition} with conditions {conditions} gather by {grouping} order by {order_by} in {ordering} order")
-        def match_conditions(record, conditions):
-            return all(record.get(field) == value for field, value in conditions.items())
+    def get(self, table=None, fields_to_return=None, connect_table=None, on_condition=None, conditions=None, grouping=None, ordering=None, order_by=None):
+        print(f"output columns {fields_to_return} from table {table} connect with table {connect_table} on {on_condition} with conditions {conditions} gather by {grouping} order by {order_by} in {ordering} order")
 
-        # Apply conditions if any
-        if conditions:
-            filtered_records = filter(lambda record: match_conditions(record, conditions), self.records)
-        else:
-            filtered_records = self.records
+        str_dict = ' '.join(conditions)
+        str_dict = str_dict.replace("'{", '{"').replace("}'", '"}').replace(': "', ':"').replace('"}', '"}')
+        search_criteria = eval(str_dict)
+        grouping = ["'provider_variables.region'"]
+        string_from_list = grouping[0]
+        group_by_field = string_from_list.strip("'")
+        string_from_list_1 = ordering[0]
+        order_by_field = string_from_list_1.strip("'")
 
-        # Sort records if order_by is specified
-        if order_by:
-            reverse_order = False
-            if isinstance(order_by, str) and order_by.startswith('-'):
-                order_by = order_by[1:]  # remove '-' sign for descending order indication
-                reverse_order = True
-            filtered_records = sorted(filtered_records, key=lambda x: x.get(order_by), reverse=reverse_order)
+        def get_nested_value(dic, keys):
+            """Recursively fetches nested values from a dictionary using a list of keys."""
+            for key in keys:
+                if isinstance(dic, dict):
+                    dic = dic.get(key, None)
+                else:  # If the path is broken, return None
+                    return None
+            return dic
+        file_paths = ['first_2000_records.json',
+                      'records_2000_to_4000.json',
+                      'records_4000_to_6000.json']
+        grouped_records = defaultdict(list)
+        for file_path in file_paths:
+            with open(file_path, 'r') as file:
+                data = json.load(file)
+            # And we have search criteria
 
-        # Apply limit if specified
-        if limit is not None:
-            filtered_records = filtered_records[:limit]
+            # We want to find all records that match our search criteria
+            for record in data:
+                if all(get_nested_value(record, key.split('.')) == value for key, value in search_criteria.items()):
+                    if fields_to_return != None:
+                        extracted_record = {field: get_nested_value(record, field.split('.')) for field in
+                                            fields_to_return}
+                        # Append the extracted record to the list in the grouped_records dictionary
+                        group_value = get_nested_value(record, list(search_criteria.keys())[0].split('.'))
+                        grouped_records[group_value].append(extracted_record)
+                    else:
+                        key_to_split = next(iter(search_criteria))
+                        group_value = get_nested_value(data, key_to_split.split('.'))
+                        grouped_records[group_value].append(data)
 
-        return list(filtered_records)
+        # print(grouped_records)
+        # Output would be [{'name': 'John Doe', 'age': 30, 'city': 'New York'}] assuming these are the only matching records
+
+        # Sort and reduce the records if necessary
+        for group, records in grouped_records.items():
+            if order_by_field:
+                def merge_sort(records, get_key, default_value=float('-inf')):
+                    if len(records) <= 1:
+                        return records
+
+                    def merge(left, right, get_key, default_value):
+                        merged = []
+                        left_index = right_index = 0
+
+                        while left_index < len(left) and right_index < len(right):
+                            left_record = left[left_index]
+                            right_record = right[right_index]
+
+                            # Use the provided get_key function with a default value if the key is not found or if the value is None
+                            left_key_value = get_key(left_record) if get_key(left_record) is not None else default_value
+                            right_key_value = get_key(right_record) if get_key(
+                                right_record) is not None else default_value
+
+                            if left_key_value <= right_key_value:
+                                merged.append(left_record)
+                                left_index += 1
+                            else:
+                                merged.append(right_record)
+                                right_index += 1
+
+                        # Add the remaining parts
+                        merged.extend(left[left_index:])
+                        merged.extend(right[right_index:])
+                        return merged
+
+                    # Divide the list into two halves
+                    middle_index = len(records) // 2
+                    left_half = merge_sort(records[:middle_index], get_key, default_value)
+                    right_half = merge_sort(records[middle_index:], get_key, default_value)
+
+                    # Merge the sorted halves
+                    return merge(left_half, right_half, get_key, default_value)
+
+                # Usage example with the sorting function
+                for file_path in file_paths:
+                    with open(file_path, 'r') as file:
+                        data = json.load(file)
+                    # And we have search criteria
+                    for record in data:
+                        if all(get_nested_value(record, key.split('.')) == value for key, value in
+                               search_criteria.items()):
+                            # group_value = get_nested_value(record, group_by_field.split('.'))
+                            # grouped_records[group_value].append(record)
+                            extracted_record = {field: get_nested_value(record, field.split('.')) for field in
+                                                fields_to_return}
+                            # Append the extracted record to the list in the grouped_records dictionary
+                            group_value = get_nested_value(record, list(search_criteria.keys())[0].split('.'))
+                            grouped_records[group_value].append(extracted_record)
+
+                # Now using merge_sort to sort each group
+                for group, records in grouped_records.items():
+                    key_function = lambda x: get_nested_value(x, order_by_field.split('.'))
+                    sorted_records = merge_sort(records, key_function)
+                    if ordering == "DSC":
+                        sorted_records = sorted_records[::-1]  # Reverse for descending order
+                    grouped_records[group] = sorted_records
+
+                # Print the sorted grouped records
+                # for group, records in grouped_records.items():
+                #     print(f"Group: {group}")
+                #     for record in records:
+                #         print(record)
+
+                # If specific fields to return are specified, pluck those out
+            # if return_fields:
+            #      grouped_records[group] = [{field: get_nested_value(record, field.split('.')) for field in return_fields} for record in records]
+            print(grouped_records)
