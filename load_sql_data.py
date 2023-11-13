@@ -164,10 +164,9 @@ def load_all():
         json.dump(ticket_table_info, file, indent=4)  # 'indent=4' for pretty-printing
 
     #nosql
-    input_file_path = 'dataset/roam_prescription_based_prediction.jsonl'
+    input_file_path = 'roam_prescription_based_prediction.jsonl'
+    output_file_path = 'first_2000.json'
 
-    #cms_prescription_counts 0-2000
-    output_file_path = 'nosql_tables/cms_prescription_counts/first_2000_cms_prescription_counts.json'
     # Open the input file and read the JSON objects line by line
     records = []
     with open(input_file_path, 'r') as file:
@@ -177,211 +176,87 @@ def load_all():
                 # Convert line into a JSON object and append to records list
                 record = json.loads(line)
                 records.append(record['cms_prescription_counts'])
-        except StopIteration:
-            # Reached the end of the file before reading 2000 records
-            pass
-        except json.JSONDecodeError as e:
-            print(f"An error occurred while parsing JSON: {e}")
-    # Write the first 2000 'cms_prescription_counts' records to a new file
-    with open(output_file_path, 'w') as file:
-        json.dump(records, file, indent=4)
-
-    #cms_prescription_counts 2000-4000
-    output_file_path = 'nosql_tables/cms_prescription_counts/2000_to_4000_cms_prescription_counts.json'
-    records_to_extract = 2000  # Number of records to extract
-    start_record_index = 2000  # Starting index, zero-based
-    # Open the input file and read the JSON objects line by line
-    extracted_records = []
-    with open(input_file_path, 'r') as file:
-        for _ in range(start_record_index):
-             # Skip the first 2000 records
-            next(file)
-        # Process the next 2000 records
-        for _ in range(records_to_extract):
-            try:
-                line = next(file)  # Read the next line
-                record = json.loads(line)  # Parse the JSON data from the line
-                extracted_records.append(record['cms_prescription_counts'])
-            except StopIteration:
-                # End of file reached
-                break
-            except json.JSONDecodeError as e:
-                print(f"An error occurred while parsing JSON: {e}")
-                break 
-    # Write the 2000 to 4000 'cms_prescription_counts' records to a new file
-    with open(output_file_path, 'w') as file:
-        json.dump(extracted_records, file, indent=4)
-    
-    #cms_prescription_counts 4000-6000
-    output_file_path = 'nosql_tables/cms_prescription_counts/4000_to_6000_cms_prescription_counts.json'
-    records_to_extract = 2000  # Number of records to extract
-    start_record_index = 4000  # Starting index, zero-based
-    # Open the input file and read the JSON objects line by line
-    extracted_records = []
-    with open(input_file_path, 'r') as file:
-        for _ in range(start_record_index):
-            # Skip the first 2000 records
-            next(file)
-        # Process the next 2000 records
-        for _ in range(records_to_extract):
-            try:
-                line = next(file)  # Read the next line
-                record = json.loads(line)  # Parse the JSON data from the line
-                extracted_records.append(record['cms_prescription_counts'])
-            except StopIteration:
-                # End of file reached
-                break
-            except json.JSONDecodeError as e:
-                print(f"An error occurred while parsing JSON: {e}")
-                break
-    # Write the 4000 to 6000 'cms_prescription_counts' records to a new file
-    with open(output_file_path, 'w') as file:
-        json.dump(extracted_records, file, indent=4)
-
-    #npi 0-2000
-    output_file_path = 'nosql_tables/npi/first_2000_npi.json'
-    # Open the input file and read the JSON objects line by line
-    records = []
-    with open(input_file_path, 'r') as file:
-        try:
-            while len(records) < 2000:
-                line = next(file)  # Read the next line
-                # Convert line into a JSON object and append to records list
-                record = json.loads(line)
                 records.append(record['npi'])
-        except StopIteration:
-            # Reached the end of the file before reading 2000 records
-            pass
-        except json.JSONDecodeError as e:
-            print(f"An error occurred while parsing JSON: {e}")
-    # Write the first 2000 'npi' records to a new file
-    with open(output_file_path, 'w') as file:
-        json.dump(records, file, indent=4)
-
-    #npi 2000-4000
-    output_file_path = 'nosql_tables/npi/2000_to_4000_npi.json'
-    records_to_extract = 2000  # Number of records to extract
-    start_record_index = 2000  # Starting index, zero-based
-    # Open the input file and read the JSON objects line by line
-    extracted_records = []
-    with open(input_file_path, 'r') as file:
-        for _ in range(start_record_index):
-            # Skip the first 2000 records
-            next(file)
-        # Process the next 2000 records
-        for _ in range(records_to_extract):
-            try:
-                line = next(file)  # Read the next line
-                record = json.loads(line)  # Parse the JSON data from the line
-                extracted_records.append(record['npi'])
-            except StopIteration:
-                # End of file reached
-                break
-            except json.JSONDecodeError as e:
-                print(f"An error occurred while parsing JSON: {e}")
-                break
-    # Write the 2000 to 4000 'npi' records to a new file
-    with open(output_file_path, 'w') as file:
-        json.dump(extracted_records, file, indent=4)
-
-    #npi 4000-6000
-    output_file_path = 'nosql_tables/npi/4000_to_6000_npi.json'
-    records_to_extract = 2000  # Number of records to extract
-    start_record_index = 4000  # Starting index, zero-based
-    # Open the input file and read the JSON objects line by line
-    extracted_records = []
-    with open(input_file_path, 'r') as file:
-        for _ in range(start_record_index):
-            # Skip the first 2000 records
-            next(file)
-        # Process the next 2000 records
-        for _ in range(records_to_extract):
-            try:
-                line = next(file)  # Read the next line
-                record = json.loads(line)  # Parse the JSON data from the line
-                extracted_records.append(record['npi'])
-            except StopIteration:
-                # End of file reached
-                break
-            except json.JSONDecodeError as e:
-                print(f"An error occurred while parsing JSON: {e}")
-                break
-    # Write the 4000 to 6000 'npi' records to a new file
-    with open(output_file_path, 'w') as file:
-        json.dump(extracted_records, file, indent=4)
-
-    #provider_variables 0-2000
-    output_file_path = 'nosql_tables/provider_variables/first_2000_provider_variables.json'
-    # Open the input file and read the JSON objects line by line
-    records = []
-    with open(input_file_path, 'r') as file:
-        try:
-            while len(records) < 2000:
-                line = next(file)  # Read the next line
-                # Convert line into a JSON object and append to records list
-                record = json.loads(line)
                 records.append(record['provider_variables'])
         except StopIteration:
             # Reached the end of the file before reading 2000 records
             pass
         except json.JSONDecodeError as e:
             print(f"An error occurred while parsing JSON: {e}")
+
     # Write the first 2000 'provider_variables' records to a new file
     with open(output_file_path, 'w') as file:
         json.dump(records, file, indent=4)
 
-    #provider_variables 2000-4000
-    output_file_path = 'nosql_tables/provider_variables/2000_to_4000_provider_variables.json'
-    records_to_extract = 2000  # Number of records to extract
-    start_record_index = 2000  # Starting index, zero-based
-    # Open the input file and read the JSON objects line by line
-    extracted_records = []
-    with open(input_file_path, 'r') as file:
-        for _ in range(start_record_index):
-            # Skip the first 2000 records
-            next(file)
-        # Process the next 2000 records
-        for _ in range(records_to_extract):
-            try:
-                line = next(file)  # Read the next line
-                record = json.loads(line)  # Parse the JSON data from the line
-                extracted_records.append(record['provider_variables'])
-            except StopIteration:
-                # End of file reached
-                break
-            except json.JSONDecodeError as e:
-                print(f"An error occurred while parsing JSON: {e}")
-                break
-    # Write the 2000 to 4000 'provider_variables' records to a new file
-    with open(output_file_path, 'w') as file:
-         json.dump(extracted_records, file, indent=4)
+    def read_chunk_json_objects(file_path, start_record, end_record):
+        # Read the entire file into a single string
+        with open(file_path, 'r') as file:
+            data = file.read()
 
-    #provider_variables 4000-6000
-    output_file_path = 'nosql_tables/provider_variables/4000_to_6000_provider_variables.json'
-    records_to_extract = 2000  # Number of records to extract
-    start_record_index = 4000  # Starting index, zero-based
-    # Open the input file and read the JSON objects line by line
-    extracted_records = []
-    with open(input_file_path, 'r') as file:
-        for _ in range(start_record_index):
-            # Skip the first 2000 records
-            next(file)
-        # Process the next 2000 records
-        for _ in range(records_to_extract):
-            try:
-                line = next(file)  # Read the next line
-                record = json.loads(line)  # Parse the JSON data from the line
-                extracted_records.append(record['provider_variables'])
-            except StopIteration:
-                # End of file reached
-                break
-            except json.JSONDecodeError as e:
-                print(f"An error occurred while parsing JSON: {e}")
-                break
-    # Write the 4000 to 6000 'provider_variables' records to a new file
-    with open(output_file_path, 'w') as file:
-        json.dump(extracted_records, file, indent=4)
+        # Use a try-except block to catch JSON decoding errors
+        try:
+            # Assuming each object is separated by a newline
+            # Create a generator to yield JSON objects instead of loading them all at once
+            objects_generator = (json.loads(obj) for obj in data.split('\n') if obj.strip())
+
+            # Skip records until we reach the start_record
+            for _ in range(start_record):
+                next(objects_generator, None)  # Advance the generator
+
+            # Take records from start_record to end_record
+            selected_records = [next(objects_generator, None) for _ in range(end_record - start_record)]
+
+            # Clean the list to remove any 'None' values in case we have less than end_record objects
+            selected_records = [record for record in selected_records if record is not None]
+
+            return selected_records
+        except json.JSONDecodeError as e:
+            print(f"An error occurred: {e}")
+            return None
+
+    # Replace 'your_file.json' with the path to your JSON file
+    json_objects = read_chunk_json_objects('roam_prescription_based_prediction.jsonl', 2000, 4000)
+
+    # Now that we have the records, save them to a new JSON file
+    if json_objects:
+        with open('records_2000_to_4000.json', 'w') as outfile:
+            json.dump(json_objects, outfile, indent=4)
+
+    def read_chunk_json_objects(file_path, start_record, end_record):
+        # Read the entire file into a single string
+        with open(file_path, 'r') as file:
+            data = file.read()
+
+        # Use a try-except block to catch JSON decoding errors
+        try:
+            # Assuming each object is separated by a newline
+            # Create a generator to yield JSON objects instead of loading them all at once
+            objects_generator = (json.loads(obj) for obj in data.split('\n') if obj.strip())
+
+            # Skip records until we reach the start_record
+            for _ in range(start_record):
+                next(objects_generator, None)  # Advance the generator
+
+            # Take records from start_record to end_record
+            selected_records = [next(objects_generator, None) for _ in range(end_record - start_record)]
+
+            # Clean the list to remove any 'None' values in case we have less than end_record objects
+            selected_records = [record for record in selected_records if record is not None]
+
+            return selected_records
+        except json.JSONDecodeError as e:
+            print(f"An error occurred: {e}")
+            return None
+
+
+    # Replace 'your_file.json' with the path to your JSON file
+    json_objects = read_chunk_json_objects('roam_prescription_based_prediction.jsonl', 4000, 6000)
+
+    # Now that we have the records, save them to a new JSON file
+    if json_objects:
+        with open('records_4000_to_6000.json', 'w') as outfile:
+            json.dump(json_objects, outfile, indent=4)
 
 
 
-load_all()
+
