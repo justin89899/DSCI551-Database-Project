@@ -108,9 +108,14 @@ def main():
                     # Parse and execute PUT IN statement
                     # Example: PUT 1, 'Alice' IN users
                     IN_index = parts.index("IN")
-                    table_name = parts[IN_index+1:]
+                    table_name = parts[IN_index + 1:]
                     # parse all the values
-                    values = [i.replace(",", "") for i in parts[1:IN_index]]
+                    #values = [i.replace(",", "") for i in parts[1:IN_index]]
+                    joined_string = " ".join(parts)
+                    # Step 1: Remove 'PUT '
+                    values_part = joined_string.split('PUT ')[1]
+                    # Step 2: Remove ' IN tables'
+                    values = values_part.split(' IN tables')[0]
                     db.insert(table_name, values)
 
                 elif query.startswith("DROP"):

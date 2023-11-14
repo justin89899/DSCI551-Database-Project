@@ -163,4 +163,100 @@ def load_all():
         # Use json.dump() to write the data to a file
         json.dump(ticket_table_info, file, indent=4)  # 'indent=4' for pretty-printing
 
-load_all()
+    #nosql
+    input_file_path = 'roam_prescription_based_prediction.jsonl'
+    output_file_path = 'first_2000.json'
+
+    # Open the input file and read the JSON objects line by line
+    records = []
+    with open(input_file_path, 'r') as file:
+        try:
+            while len(records) < 2000:
+                line = next(file)  # Read the next line
+                # Convert line into a JSON object and append to records list
+                record = json.loads(line)
+                records.append(record['cms_prescription_counts'])
+                records.append(record['npi'])
+                records.append(record['provider_variables'])
+        except StopIteration:
+            # Reached the end of the file before reading 2000 records
+            pass
+        except json.JSONDecodeError as e:
+            print(f"An error occurred while parsing JSON: {e}")
+
+    # Write the first 2000 'provider_variables' records to a new file
+    with open(output_file_path, 'w') as file:
+        json.dump(records, file, indent=4)
+
+    def read_chunk_json_objects(file_path, start_record, end_record):
+        # Read the entire file into a single string
+        with open(file_path, 'r') as file:
+            data = file.read()
+
+        # Use a try-except block to catch JSON decoding errors
+        try:
+            # Assuming each object is separated by a newline
+            # Create a generator to yield JSON objects instead of loading them all at once
+            objects_generator = (json.loads(obj) for obj in data.split('\n') if obj.strip())
+
+            # Skip records until we reach the start_record
+            for _ in range(start_record):
+                next(objects_generator, None)  # Advance the generator
+
+            # Take records from start_record to end_record
+            selected_records = [next(objects_generator, None) for _ in range(end_record - start_record)]
+
+            # Clean the list to remove any 'None' values in case we have less than end_record objects
+            selected_records = [record for record in selected_records if record is not None]
+
+            return selected_records
+        except json.JSONDecodeError as e:
+            print(f"An error occurred: {e}")
+            return None
+
+    # Replace 'your_file.json' with the path to your JSON file
+    json_objects = read_chunk_json_objects('roam_prescription_based_prediction.jsonl', 2000, 4000)
+
+    # Now that we have the records, save them to a new JSON file
+    if json_objects:
+        with open('records_2000_to_4000.json', 'w') as outfile:
+            json.dump(json_objects, outfile, indent=4)
+
+    def read_chunk_json_objects(file_path, start_record, end_record):
+        # Read the entire file into a single string
+        with open(file_path, 'r') as file:
+            data = file.read()
+
+        # Use a try-except block to catch JSON decoding errors
+        try:
+            # Assuming each object is separated by a newline
+            # Create a generator to yield JSON objects instead of loading them all at once
+            objects_generator = (json.loads(obj) for obj in data.split('\n') if obj.strip())
+
+            # Skip records until we reach the start_record
+            for _ in range(start_record):
+                next(objects_generator, None)  # Advance the generator
+
+            # Take records from start_record to end_record
+            selected_records = [next(objects_generator, None) for _ in range(end_record - start_record)]
+
+            # Clean the list to remove any 'None' values in case we have less than end_record objects
+            selected_records = [record for record in selected_records if record is not None]
+
+            return selected_records
+        except json.JSONDecodeError as e:
+            print(f"An error occurred: {e}")
+            return None
+
+
+    # Replace 'your_file.json' with the path to your JSON file
+    json_objects = read_chunk_json_objects('roam_prescription_based_prediction.jsonl', 4000, 6000)
+
+    # Now that we have the records, save them to a new JSON file
+    if json_objects:
+        with open('records_4000_to_6000.json', 'w') as outfile:
+            json.dump(json_objects, outfile, indent=4)
+
+
+
+
