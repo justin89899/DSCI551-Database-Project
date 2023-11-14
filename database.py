@@ -93,21 +93,29 @@ class noSQL_Database:
         }
         self.records = []
 
-    def insert(self, data):
-        if self.validate(data):
-            self.records.append(data)
-        else:
-            raise ValueError("Data does not conform to schema")
-        # table_name = table_info[0]
-        # table_columns = " ".join(table_info[1:]).replace("(","").replace(")","").replace(",","")
-        # table_columns = table_columns.split(" ")
-        # print(f"Put values {values} to table {table_name} on columns {table_columns}")
-        # if table_name not in self.tables:
-        #     print(f"Table {table_name} doesn't exist.")
-        # if len(values) != len(self.tables[table_name]):
-        #     print("Number of columns doesn't match.")
-        # for i in range(self.tables[table_name]):
-        #     self.tables[table_name][i].append(values[i])
+    def insert(self, table_info=None, json_string=None):
+        print(f"Put values {json_string} to table {table_info}")
+        # The path to the JSON file
+        json_file_path = 'nosql_tables/filtered_data.jsonl'
+        new_record = json.loads(json_string)
+
+        # Load the current data from the file
+        try:
+            with open(json_file_path, 'r') as file:
+                data = json.load(file)
+        except FileNotFoundError:
+            data = []  # If the file does not exist, start with an empty list
+        except json.JSONDecodeError:
+            raise Exception(f"Error reading the file {json_file_path}. Make sure it's valid JSON.")
+
+        # Append the new record to the data list
+        data.append(new_record)
+
+        # Write the updated data back to the file
+        with open(json_file_path, 'w') as file:
+            json.dump(data, file, indent=4)  # 'indent' for pretty-printing
+
+        print(f"New record added to {json_file_path}")
 
     def validate(self, data):
         # Validate that each key in the schema is present in the data and matches the type
@@ -198,9 +206,9 @@ class noSQL_Database:
                 else:  # If the path is broken, return None
                     return None
             return dic
-        file_paths = ['first_2000_records.json',
-                      'records_2000_to_4000.json',
-                      'records_4000_to_6000.json']
+        file_paths = ['nosql_tables/filtered_data.jsonl', 'nosql_tables/first_2000_records.json',
+                      'nosql_tables/records_2000_to_4000.json',
+                      'nosql_tables/records_4000_to_6000.json']
         grouped_records = defaultdict(list)
         for file_path in file_paths:
             with open(file_path, 'r') as file:
