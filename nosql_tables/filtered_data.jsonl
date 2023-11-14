@@ -1,0 +1,34 @@
+[
+    {
+        "provider_variables": {
+            "brand_name_rx_count": 120,
+            "gender": "F",
+            "generic_rx_count": 350,
+            "region": "Northeast",
+            "settlement_type": "urban",
+            "specialty": "Hematology & Oncology",
+            "years_practicing": 0
+        },
+        "npi": "1234567890",
+        "cms_prescription_counts": {
+            "Aspirin": 100,
+            "Lipitor": 200
+        }
+    },
+    {
+        "provider_variables": {
+            "brand_name_rx_count": 150,
+            "gender": "M",
+            "generic_rx_count": 450,
+            "region": "West",
+            "settlement_type": "rural",
+            "specialty": "General Practice",
+            "years_practicing": 5
+        },
+        "npi": "0987654321",
+        "cms_prescription_counts": {
+            "DrugA": 200,
+            "DrugB": 100
+        }
+    }
+]
