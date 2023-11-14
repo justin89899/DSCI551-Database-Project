@@ -132,14 +132,43 @@ class noSQL_Database:
                     print("Invalid 'cms_prescription_counts' format.")
                     return False
 
-    def delete(self, conditions):
-        self.records = [record for record in self.records if
-                        not all(record.get(field) == value for field, value in conditions.items())]
-        # if table_name not in self.tables:
-        #     print(f"Table {table_name} doesn't exist.")
-        # if not condition:
-        #     for ele in items:
-        #         self.tables[table_name][ele] = None
+    def delete(self, table_name, items, condition):
+        print(f"delete items {items} from table {table_name} on condition {condition}")
+        fields_to_delete = items[0]
+        concatenated = ''.join(condition)
+        # Step 2: Replace single quotes with double quotes
+        valid_json_string = concatenated.replace("'", '"')
+        search_criteria = json.loads(valid_json_string)
+        file_paths = ['filtered_data.jsonl', 'first_2000_records.json',
+                      'records_2000_to_4000.json',
+                      'records_4000_to_6000.json']
+        def get_nested_value(dic, keys):
+            """Recursively fetches nested values from a dictionary using a list of keys."""
+            for key in keys:
+                if isinstance(dic, dict):
+                    dic = dic.get(key, None)
+                else:  # If the path is broken, return None
+                    return None
+            return dic
+
+        # Read the data from the file
+        for file_path in file_paths:
+            with open(file_path, 'r') as file:
+                data = json.load(file)
+            for record in data:
+                if all(get_nested_value(record, key.split('.')) == value for key, value in search_criteria.items()):
+                    if fields_to_delete != None:
+                        field_parts = fields_to_delete.split('.')
+
+                        # field_parts now contains ['provider_variables', 'region']
+                        parent_key = field_parts[0]  # 'provider_variables'
+                        child_key = field_parts[1] if len(field_parts) > 1 else None  # 'region'
+                        record.get(parent_key, {}).pop(child_key, None)
+                        with open(file_path, 'w') as file:
+                            json.dump(data, file, indent=4)
+
+                        print(f"Region field removed from the record")
+
 
     def update(self, new_data, unique_id_field, update_conditions=None):
         updated = False
