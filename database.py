@@ -175,15 +175,21 @@ class noSQL_Database:
     def get(self, table=None, fields_to_return=None, connect_table=None, on_condition=None, conditions=None, grouping=None, ordering=None, order_by=None):
         print(f"output columns {fields_to_return} from table {table} connect with table {connect_table} on {on_condition} with conditions {conditions} gather by {grouping} order by {order_by} in {ordering} order")
 
-        str_dict = ' '.join(conditions)
-        str_dict = str_dict.replace("'{", '{"').replace("}'", '"}').replace(': "', ':"').replace('"}', '"}')
-        search_criteria = eval(str_dict)
-        grouping = ["'provider_variables.region'"]
-        string_from_list = grouping[0]
-        group_by_field = string_from_list.strip("'")
-        string_from_list_1 = ordering[0]
-        order_by_field = string_from_list_1.strip("'")
-
+        if conditions != None:
+            str_dict = ' '.join(conditions)
+            str_dict = str_dict.replace("'{", '{"').replace("}'", '"}').replace(': "', ':"').replace('"}', '"}')
+            search_criteria = eval(str_dict)
+        else:
+            search_criteria = None
+        if grouping != None:
+            grouping = ["'provider_variables.region'"]
+            string_from_list = grouping[0]
+            group_by_field = string_from_list.strip("'")
+        if ordering != None or order_by != None:
+            string_from_list_1 = ordering[0]
+            order_by_field = string_from_list_1.strip("'")
+        else:
+            order_by_field = None
         def get_nested_value(dic, keys):
             """Recursively fetches nested values from a dictionary using a list of keys."""
             for key in keys:
