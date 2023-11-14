@@ -172,7 +172,8 @@ class SQL_Database:
                 # Create a CSV reader object
                 csvreader = csv.reader(csvfile)
                 next(csvreader)
-                for row in csvreader:
+                rows = list(csvreader)
+                for row in rows:
                     input_targets = []
                     if not self.check_condition([row[cti] for cti in condition_target_index], condition_operators, condition_comparisons, condition_logics):
                         continue
