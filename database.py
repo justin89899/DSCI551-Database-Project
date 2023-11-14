@@ -170,44 +170,44 @@ class noSQL_Database:
                         print(f"Region field removed from the record")
 
 
-    def update(self, new_data, unique_id_field, update_conditions=None):
-        updated = False
-        if unique_id_field = 'npi':
-            file_paths = ['nosql_tables/npi/first_2000_npi.json', 'nosql_tables/npi/2000_to_4000_npi.json', 'nosql_tables/npi/4000_to_6000_npi.json']
-        if unique_id_field = 'cms_prescription_counts':
-            file_paths = ['nosql_tables/cms_prescription_counts/first_2000_cms_prescription_counts.json', 'nosql_tables/cms_prescription_counts/2000_to_4000_cms_prescription_counts.json', 'nosql_tables/cms_prescription_counts/4000_to_6000_cms_prescription_counts.json']
-        if unique_id_field = 'provider_variables':
-            file_paths = ['nosql_tables/provider_variables/first_2000_provider_variables.json', 'nosql_tables/provider_variables/2000_to_4000_provider_variables.json', 'nosql_tables/provider_variables/4000_to_6000_provider_variables.json']
+    def update(self, table_name, Values, condition):
+        print(f"update values {Values} from table {table_name} on condition {condition}")
+        values = Values[0]
+        fields_to_change = str(table_name)
+        concatenated = ''.join(condition)
+        # Step 2: Replace single quotes with double quotes
+        valid_json_string = concatenated.replace("'", '"')
+        search_criteria = json.loads(valid_json_string)
+        file_paths = ['filtered_data.jsonl', 'first_2000_records.json',
+                      'records_2000_to_4000.json',
+                      'records_4000_to_6000.json']
+
+        def get_nested_value(dic, keys):
+            """Recursively fetches nested values from a dictionary using a list of keys."""
+            for key in keys:
+                if isinstance(dic, dict):
+                    dic = dic.get(key, None)
+                else:  # If the path is broken, return None
+                    return None
+            return dic
+
+        # Read the data from the file
         for file_path in file_paths:
-            # Proceed only if the file exists to avoid creating a new one unnecessarily
-            if not os.path.isfile(file_path):
-                continue
+            with open(file_path, 'r') as file:
+                data = json.load(file)
+            for record in data:
+                if all(get_nested_value(record, key.split('.')) == value for key, value in search_criteria.items()):
+                    if fields_to_change != None:
+                        field_parts = fields_to_change.split('.')
 
-            temp_file_path = file_path + '.tmp'  # Temporary file for updates
-            with open(file_path, 'r') as file, open(temp_file_path, 'w') as temp_file:
-                for line in file:
-                    record = json.loads(line)
-                    # Check if the record matches the unique identifier and update conditions
-                    if (record.get(unique_id_field) == new_data.get(unique_id_field) and
-                            (update_conditions is None or all(record.get(cond) == val for cond, val in update_conditions.items()))):
-                        record.update(new_data)  # Update the record with new data
-                        updated = True
-                    # Write the original or updated record to the temporary file
-                    temp_file.write(json.dumps(record) + '\n')
+                        # field_parts now contains ['provider_variables', 'region']
+                        parent_key = field_parts[0]  # 'provider_variables'
+                        child_key = field_parts[1] if len(field_parts) > 1 else None  # 'region'
+                        record[parent_key][child_key] = values
+                        # Step 3: Save the Data Back
 
-            # Replace the original file with the updated temporary file
-            os.replace(temp_file_path, file_path)
-        
-            # If we updated a record, no need to check the remaining files
-            if updated:
-                break
-
-        if not updated:
-            # If the record was not found and updated, you can decide to append it to one of the files or raise an error
-            # For example, appending to the first file:
-            with open(file_paths[0] + '.tmp', 'a') as temp_file:  # Open in append mode
-                temp_file.write(json.dumps(new_data) + '\n')
-            os.replace(file_paths[0] + '.tmp', file_paths[0])
+                        with open(file_path, 'w') as file:
+                            json.dump(data, file, indent=4)
 
     def get(self, table=None, fields_to_return=None, connect_table=None, on_condition=None, conditions=None, grouping=None, ordering=None, order_by=None):
         print(f"output columns {fields_to_return} from table {table} connect with table {connect_table} on {on_condition} with conditions {conditions} gather by {grouping} order by {order_by} in {ordering} order")
