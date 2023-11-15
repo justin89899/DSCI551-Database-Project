@@ -216,6 +216,57 @@ class SQL_Database:
                     for ti in target_index:
                         values_to_print.append(row[ti])
                     print(values_to_print)
+    def create_group_tables(self, table, grouping_c):
+        # split the table to different group table (each group one table)
+        group_dict = {}
+        group_table_info = {}
+        unique_group = 0
+        grouping_c_index = self.tables[table].index(grouping_c)
+        #### delete grouping directory if appllicable
+        # Specify the directory you want to delete
+        directory_to_delete = "sql_grouping"
+        # Use try-except block to handle exceptions
+        try:
+            os.mkdir('sql_grouping')
+            shutil.rmtree(directory_to_delete)
+            print(f"The directory {directory_to_delete} has been deleted successfully.")
+        except:
+            shutil.rmtree(directory_to_delete)
+            os.mkdir('sql_grouping')
+        #os.mkdir('sql_grouping')
+        os.mkdir(f'sql_grouping/{table}')
+        with open(f'sql_tables/{table}/metadata.json', 'r') as file:
+        # Load JSON data from the file into a Python object
+            metadata = json.load(file)
+        for table_chunk_num in metadata:
+            with open(f'sql_tables/{table}/table_{table_chunk_num}.csv', 'r') as csvfile:
+                # Create a CSV reader object
+                csvreader = csv.reader(csvfile)
+                header = next(csvreader)
+                rows = list(csvreader)
+            for r in rows:
+                if r[grouping_c_index] not in group_dict:
+                    group_dict[r[grouping_c_index]] = unique_group
+                    group_table_info[unique_group] = 1
+                    # Create and write to the CSV file
+                    with open(f'sql_grouping/{table}/table_{unique_group}.csv', mode='w', newline='') as file:
+                        writer = csv.writer(file)
+                        writer.writerow(r)
+                    unique_group+=1
+                else:
+                    group_num = group_dict[r[grouping_c_index]]
+                    group_table_info[group_num] += 1
+                    #write to the CSV file
+                    with open(f'sql_grouping/{table}/table_{group_num}.csv', mode='a', newline='') as file:
+                        writer = csv.writer(file)
+                        writer.writerow(r)
+        # Define the name of the JSON file
+        json_filename = f'sql_grouping/{table}/metadata.json'
+        # Open the file for writing
+        with open(json_filename, 'w') as file:
+            # Use json.dump() to write the data to a file
+            json.dump(group_table_info, file, indent=4)  # 'indent=4' for pretty-printing
+
     def get(self, table, columns, connect_table=None, on_condition=None, conditions=None, grouping=None, ordering=None, order_by=None):
         print(f"output columns {columns} from table {table} connect with table {connect_table} on {on_condition} with conditions {conditions} gather by {grouping} order by {order_by} in {ordering} order")
         #### parse condition (WHEN)
@@ -250,43 +301,8 @@ class SQL_Database:
                     else:
                         print("Error: Invalid grouping table.")
                         return
-                # split the table to different group table (each group one table)
-                group_dict = {}
-                group_table_info = {}
-                unique_group = 0
-                grouping_c_index = self.tables[table].index(grouping_c)
-                os.mkdir('sql_grouping')
-                with open(f'sql_tables/{table}/metadata.json', 'r') as file:
-                # Load JSON data from the file into a Python object
-                    metadata = json.load(file)
-                for table_chunk_num in metadata:
-                    with open(f'sql_tables/{table}/table_{table_chunk_num}.csv', 'r') as csvfile:
-                        # Create a CSV reader object
-                        csvreader = csv.reader(csvfile)
-                        header = next(csvreader)
-                        rows = list(csvreader)
-                    for r in rows:
-                        if r[grouping_c_index] not in group_dict:
-                            group_dict[r[grouping_c_index]] = unique_group
-                            group_table_info[unique_group] = 1
-                            # Create and write to the CSV file
-                            with open(f'sql_grouping/{unique_group}.csv', mode='w', newline='') as file:
-                                writer = csv.writer(file)
-                                writer.writerow(r)
-                            unique_group+=1
-                        else:
-                            group_num = group_dict[r[grouping_c_index]]
-                            group_table_info[group_num] += 1
-                            #write to the CSV file
-                            with open(f'sql_grouping/{group_num}.csv', mode='a', newline='') as file:
-                                writer = csv.writer(file)
-                                writer.writerow(r)
-                # Define the name of the JSON file
-                json_filename = 'sql_grouping/metadata.json'
-                # Open the file for writing
-                with open(json_filename, 'w') as file:
-                    # Use json.dump() to write the data to a file
-                    json.dump(group_table_info, file, indent=4)  # 'indent=4' for pretty-printing
+                    
+                self.create_group_tables(table,grouping_c)
 
             else:
                 print('Error: Wrong grouping format: table_name.column_name')
@@ -344,14 +360,18 @@ class SQL_Database:
                         condition_target_index.append(tables_cols.index(ct))
 
         # Open the metadata JSON file
-        with open(f'sql_tables/{table}/metadata.json', 'r') as file:
+        table_dir = 'sql_tables'
+        if grouping:
+            table_dir = 'sql_grouping'
+        
+        with open(f'{table_dir}/{table}/metadata.json', 'r') as file:
             # Load JSON data from the file into a Python object
             metadata = json.load(file)
         column_print=f'|{" | ".join(columns)}|'
         print(column_print)
         print('-'*len(column_print))
         for table_chunk_num in metadata:
-            with open(f'sql_tables/{table}/table_{table_chunk_num}.csv', 'r') as csvfile:
+            with open(f'{table_dir}/{table}/table_{table_chunk_num}.csv', 'r') as csvfile:
                 # Create a CSV reader object
                 csvreader = csv.reader(csvfile)
                 header = next(csvreader)
