@@ -1,5 +1,6 @@
 
 from database import *
+import time
 
 def main():
     while True:
@@ -20,6 +21,7 @@ def main():
         while True:
             
             query = input("Enter a query (or 'exit' to quit): ").strip()
+            start_time = time.time()
             if query.lower() == 'exit':
                 break
             # get key words index
@@ -147,6 +149,7 @@ def main():
 
             except Exception as e:
                 print(f"Error: {str(e)}")
-
+            end_time = time.time()
+            print(f"Run time: {end_time - start_time} seconds.")
 if __name__ == "__main__":
     main()

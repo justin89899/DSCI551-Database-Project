@@ -4,6 +4,8 @@ from collections import defaultdict
 import os
 import csv
 import re
+import shutil
+
 class SQL_Database:
     def __init__(self):
         self.tables = {"Customer":["customer_id", "name", "email", "age", "gender"],
@@ -69,7 +71,9 @@ class SQL_Database:
         i = 0
         while i < len(logics)+1:
             op = operators[i]
-            if op == "=":
+            if targets[i] == True: # pass this condition
+                pass_condition = True
+            elif op == "=":
                 pass_condition = targets[i]==comparisons[i]
             elif op == ">":
                 pass_condition = targets[i]>comparisons[i]
@@ -101,35 +105,35 @@ class SQL_Database:
         return pass_condition
     
     def parse_condition(self, conditions):
-        skip = 0
-        need_new = False
-        new_conditions = []
-        for i, c in enumerate(conditions):
-            if skip:
-                skip-=1
-                continue
-            if c.startswith('"') or c.startswith("'"):
-                new_sring = c[1:]+' '
-                temp_i = i
-                while not conditions[temp_i+1].endswith('"') and not conditions[temp_i+1].endswith("'"):
-                    new_sring+=conditions[temp_i+1]
-                    new_sring+=' '
-                    temp_i+=1
-                    skip+=1
-                new_sring+=conditions[temp_i+1][:-1]
-                skip+=1
-                new_conditions.append(new_sring)
-                need_new = True
-            else:
-                new_conditions.append(c)
-        if need_new:
-            conditions = new_conditions
         condition_targets = []
         condition_operators = []
         condition_comparisons = []
         condition_logics = []
         valid_condition = True
         if conditions:
+            skip = 0
+            need_new = False
+            new_conditions = []
+            for i, c in enumerate(conditions):
+                if skip:
+                    skip-=1
+                    continue
+                if c.startswith('"') or c.startswith("'"):
+                    new_sring = c[1:]+' '
+                    temp_i = i
+                    while not conditions[temp_i+1].endswith('"') and not conditions[temp_i+1].endswith("'"):
+                        new_sring+=conditions[temp_i+1]
+                        new_sring+=' '
+                        temp_i+=1
+                        skip+=1
+                    new_sring+=conditions[temp_i+1][:-1]
+                    skip+=1
+                    new_conditions.append(new_sring)
+                    need_new = True
+                else:
+                    new_conditions.append(c)
+            if need_new:
+                conditions = new_conditions
 
             if len(conditions) < 3:
                 valid_condition = False
@@ -220,6 +224,73 @@ class SQL_Database:
             print("Error: Invalid condition.")
             return
         
+        #### check grouping 
+        if grouping:
+            if '.' in grouping[0]:
+                grouping_t = grouping[0].split('.')[0]
+                grouping_c = grouping[0].split('.')[1]
+                if grouping_t not in self.tables:
+                    print("Error: Invalid grouping table.")
+                    return
+                else:
+                    if grouping_c not in self.tables[grouping_t]:
+                        print("Error: Invalid grouping column.")
+                        return
+                
+                if grouping_t != table:
+                    if connect_table and grouping_t in connect_table: # swap the first table to the grouping table
+                        # swap table
+                        gt_i = connect_table.index(grouping_t)
+                        connect_table[gt_i] = table
+                        table = grouping_t
+                        # swap on condition
+                        temp = on_condition[3*gt_i]
+                        on_condition[3*gt_i] = on_condition[3*gt_i+2]
+                        on_condition[3*gt_i+2] = temp
+                    else:
+                        print("Error: Invalid grouping table.")
+                        return
+                # split the table to different group table (each group one table)
+                group_dict = {}
+                group_table_info = {}
+                unique_group = 0
+                grouping_c_index = self.tables[table].index(grouping_c)
+                os.mkdir('sql_grouping')
+                with open(f'sql_tables/{table}/metadata.json', 'r') as file:
+                # Load JSON data from the file into a Python object
+                    metadata = json.load(file)
+                for table_chunk_num in metadata:
+                    with open(f'sql_tables/{table}/table_{table_chunk_num}.csv', 'r') as csvfile:
+                        # Create a CSV reader object
+                        csvreader = csv.reader(csvfile)
+                        header = next(csvreader)
+                        rows = list(csvreader)
+                    for r in rows:
+                        if r[grouping_c_index] not in group_dict:
+                            group_dict[r[grouping_c_index]] = unique_group
+                            group_table_info[unique_group] = 1
+                            # Create and write to the CSV file
+                            with open(f'sql_grouping/{unique_group}.csv', mode='w', newline='') as file:
+                                writer = csv.writer(file)
+                                writer.writerow(r)
+                            unique_group+=1
+                        else:
+                            group_num = group_dict[r[grouping_c_index]]
+                            group_table_info[group_num] += 1
+                            #write to the CSV file
+                            with open(f'sql_grouping/{group_num}.csv', mode='a', newline='') as file:
+                                writer = csv.writer(file)
+                                writer.writerow(r)
+                # Define the name of the JSON file
+                json_filename = 'sql_grouping/metadata.json'
+                # Open the file for writing
+                with open(json_filename, 'w') as file:
+                    # Use json.dump() to write the data to a file
+                    json.dump(group_table_info, file, indent=4)  # 'indent=4' for pretty-printing
+
+            else:
+                print('Error: Wrong grouping format: table_name.column_name')
+                return
         
         ##### Projection
         # check table name and columns
@@ -232,7 +303,6 @@ class SQL_Database:
             tables_cols+=self.tables[table]
             for t in self.tables[table]:
                 tables_cols_with_name.append(table+'.'+t)
-
         if connect_table:
             for ct in connect_table:
                 if ct not in self.tables:
@@ -242,12 +312,10 @@ class SQL_Database:
                     tables_cols+=self.tables[ct]
                     for t in self.tables[ct]:
                         tables_cols_with_name.append(ct+'.'+t)
-        print(tables_cols)
-        print(tables_cols_with_name)
         target_index = []
         for c in columns:
-            if '.' in c: ## exustomer.name
-                if c not in tables_cols_with_name:
+            if '.' in c: ## ex Customer.name
+                if c not in tables_cols_with_name: 
                     print(f"Column {c} doesn't exist or unable to get.")
                     return
                 else:
@@ -259,19 +327,21 @@ class SQL_Database:
                 else:
                     target_index.append(tables_cols.index(c))
         condition_target_index = []
-        for ct in condition_targets:
-            if '.' in ct: ## exustomer.name
-                if ct not in tables_cols_with_name:
-                    print(f"Column {ct} doesn't exist or unable to get.")
-                    return
+
+        if condition_targets:
+            for ct in condition_targets:
+                if '.' in ct: ## exustomer.name
+                    if ct not in tables_cols_with_name:
+                        print(f"Column {ct} doesn't exist or unable to get.")
+                        return
+                    else:
+                        condition_target_index.append(tables_cols_with_name.index(ct))
                 else:
-                    condition_target_index.append(tables_cols_with_name.index(ct))
-            else:
-                if ct not in tables_cols:
-                    print(f"Column {ct} doesn't exist or unable to get.")
-                    return
-                else:
-                    condition_target_index.append(tables_cols.index(ct))
+                    if ct not in tables_cols:
+                        print(f"Column {ct} doesn't exist or unable to get.")
+                        return
+                    else:
+                        condition_target_index.append(tables_cols.index(ct))
 
         # Open the metadata JSON file
         with open(f'sql_tables/{table}/metadata.json', 'r') as file:
@@ -287,6 +357,15 @@ class SQL_Database:
                 header = next(csvreader)
                 rows = list(csvreader)
             for row in rows:
+                # WHEN check condition
+                condition_input = []
+                for cti in condition_target_index:
+                    if cti > len(row)-1:
+                        condition_input.append(True)
+                    else:
+                        condition_input.append(row[cti])
+                if not self.check_condition(condition_input, condition_operators, condition_comparisons, condition_logics):
+                    continue
                 if connect_table:
                     self.connect_row(target_index, header, row, connect_table.copy(), on_condition.copy(), condition_target_index, condition_operators, condition_comparisons, condition_logics)
                 else:
@@ -298,6 +377,16 @@ class SQL_Database:
                     for ti in target_index:
                         values_to_print.append(row[ti])
                     print(values_to_print)
+        #### delete grouping directory if appllicable
+        # Specify the directory you want to delete
+        directory_to_delete = "sql_grouping"
+        # Use try-except block to handle exceptions
+        try:
+            shutil.rmtree(directory_to_delete)
+            print(f"The directory {directory_to_delete} has been deleted successfully.")
+        except OSError as e:
+            print(f"Error: {e.strerror}")
+
 class noSQL_Database:
     def __init__(self, schema):
         self.schema = {
