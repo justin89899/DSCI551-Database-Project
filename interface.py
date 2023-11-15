@@ -63,9 +63,9 @@ def main():
                             connect_table.append(parts[connect_index + 1])
                             #on_condition = parts[connect_index + 3:connect_index + 6]
                             if key_words_index[key_words_index.index(connect_index)+1] == "end":
-                                on_condition.append(parts[connect_index + 3:])
+                                on_condition+=parts[connect_index + 3:]
                             else:
-                                on_condition.append(parts[connect_index + 3:key_words_index[key_words_index.index(connect_index)+1]])
+                                on_condition+=parts[connect_index + 3:key_words_index[key_words_index.index(connect_index)+1]]
                     # parse condition (WHEN)
                     conditions = None
                     if "WHEN" in parts:

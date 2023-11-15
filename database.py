@@ -101,6 +101,29 @@ class SQL_Database:
         return pass_condition
     
     def parse_condition(self, conditions):
+        skip = 0
+        need_new = False
+        new_conditions = []
+        for i, c in enumerate(conditions):
+            if skip:
+                skip-=1
+                continue
+            if c.startswith('"') or c.startswith("'"):
+                new_sring = c[1:]+' '
+                temp_i = i
+                while not conditions[temp_i+1].endswith('"') and not conditions[temp_i+1].endswith("'"):
+                    new_sring+=conditions[temp_i+1]
+                    new_sring+=' '
+                    temp_i+=1
+                    skip+=1
+                new_sring+=conditions[temp_i+1][:-1]
+                skip+=1
+                new_conditions.append(new_sring)
+                need_new = True
+            else:
+                new_conditions.append(c)
+        if need_new:
+            conditions = new_conditions
         condition_targets = []
         condition_operators = []
         condition_comparisons = []
@@ -138,7 +161,57 @@ class SQL_Database:
                 valid_condition = False
 
         return condition_targets, condition_operators, condition_comparisons, condition_logics, valid_condition
-    
+    def connect_row(self, target_index, pre_header, pre_row, connect_table, on_condition, condition_target_index, condition_operators, condition_comparisons, condition_logics):
+        table = connect_table.pop(0)
+        left_c = on_condition.pop(0)
+        on_condition.pop(0)
+        right_c = on_condition.pop(0)
+        left_t = None
+        right_t = None
+        if '.' in left_c:
+            left_t = left_c.split('.')[0]
+            left_c = left_c.split('.')[1]
+        if '.' in right_c:
+            right_t = right_c.split('.')[0]
+            right_c = right_c.split('.')[1]
+        if left_t:
+            if left_t == table:
+                temp = left_c
+                left_c = right_c
+                right_c = temp
+        elif right_t:
+            if right_t != table:
+                temp = left_c
+                left_c = right_c
+                right_c = temp
+        
+        with open(f'sql_tables/{table}/metadata.json', 'r') as file:
+            # Load JSON data from the file into a Python object
+            metadata = json.load(file)
+
+        for table_chunk_num in metadata:
+            with open(f'sql_tables/{table}/table_{table_chunk_num}.csv', 'r') as csvfile:
+                # Create a CSV reader object
+                csvreader = csv.reader(csvfile)
+                header = next(csvreader)
+                rows = list(csvreader)
+            for r in rows:
+                if pre_row[pre_header.index(left_c)] == r[header.index(right_c)]:
+                    row = pre_row+r
+                    
+                else:
+                    continue
+                if connect_table:
+                    self.connect_row(target_index, pre_header+header, row, connect_table.copy(), on_condition.copy(), condition_target_index, condition_operators, condition_comparisons, condition_logics)
+                else:
+                    # WHEN check condition
+                    if not self.check_condition([row[cti] for cti in condition_target_index], condition_operators, condition_comparisons, condition_logics):
+                        continue
+
+                    values_to_print = []
+                    for ti in target_index:
+                        values_to_print.append(row[ti])
+                    print(values_to_print)
     def get(self, table, columns, connect_table=None, on_condition=None, conditions=None, grouping=None, ordering=None, order_by=None):
         print(f"output columns {columns} from table {table} connect with table {connect_table} on {on_condition} with conditions {conditions} gather by {grouping} order by {order_by} in {ordering} order")
         #### parse condition (WHEN)
@@ -150,14 +223,56 @@ class SQL_Database:
         
         ##### Projection
         # check table name and columns
+        tables_cols = []
+        tables_cols_with_name = []
         if table not in self.tables:
             print(f"Table {table} doesn't exist.")
             return
-                
+        else:
+            tables_cols+=self.tables[table]
+            for t in self.tables[table]:
+                tables_cols_with_name.append(table+'.'+t)
+
+        if connect_table:
+            for ct in connect_table:
+                if ct not in self.tables:
+                    print(f"Table {table} to connect doesn't exist.")
+                    return
+                else:
+                    tables_cols+=self.tables[ct]
+                    for t in self.tables[ct]:
+                        tables_cols_with_name.append(ct+'.'+t)
+        print(tables_cols)
+        print(tables_cols_with_name)
+        target_index = []
         for c in columns:
-            if c not in self.tables[table]:
-                print(f"Column {c} doesn't exist or unable to get.")
-                return
+            if '.' in c: ## exustomer.name
+                if c not in tables_cols_with_name:
+                    print(f"Column {c} doesn't exist or unable to get.")
+                    return
+                else:
+                    target_index.append(tables_cols_with_name.index(c))
+            else:
+                if c not in tables_cols:
+                    print(f"Column {c} doesn't exist or unable to get.")
+                    return
+                else:
+                    target_index.append(tables_cols.index(c))
+        condition_target_index = []
+        for ct in condition_targets:
+            if '.' in ct: ## exustomer.name
+                if ct not in tables_cols_with_name:
+                    print(f"Column {ct} doesn't exist or unable to get.")
+                    return
+                else:
+                    condition_target_index.append(tables_cols_with_name.index(ct))
+            else:
+                if ct not in tables_cols:
+                    print(f"Column {ct} doesn't exist or unable to get.")
+                    return
+                else:
+                    condition_target_index.append(tables_cols.index(ct))
+
         # Open the metadata JSON file
         with open(f'sql_tables/{table}/metadata.json', 'r') as file:
             # Load JSON data from the file into a Python object
@@ -165,16 +280,17 @@ class SQL_Database:
         column_print=f'|{" | ".join(columns)}|'
         print(column_print)
         print('-'*len(column_print))
-        target_index = [self.tables[table].index(c) for c in columns]
-        condition_target_index = [self.tables[table].index(ct) for ct in condition_targets]
         for table_chunk_num in metadata:
             with open(f'sql_tables/{table}/table_{table_chunk_num}.csv', 'r') as csvfile:
                 # Create a CSV reader object
                 csvreader = csv.reader(csvfile)
-                next(csvreader)
+                header = next(csvreader)
                 rows = list(csvreader)
-                for row in rows:
-                    input_targets = []
+            for row in rows:
+                if connect_table:
+                    self.connect_row(target_index, header, row, connect_table.copy(), on_condition.copy(), condition_target_index, condition_operators, condition_comparisons, condition_logics)
+                else:
+                    # WHEN check condition
                     if not self.check_condition([row[cti] for cti in condition_target_index], condition_operators, condition_comparisons, condition_logics):
                         continue
 
