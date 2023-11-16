@@ -1,2 +1,3 @@
-a = "GET name, id FROM student CONNECT professor on porfessor.name = student.name WHEN gg"
-print(a.split("FROM"))
+for i in range(10):
+    print('f')
+print(i)

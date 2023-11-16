@@ -165,7 +165,7 @@ class SQL_Database:
                 valid_condition = False
 
         return condition_targets, condition_operators, condition_comparisons, condition_logics, valid_condition
-    def connect_row(self, target_index, pre_header, pre_row, connect_table, on_condition, condition_target_index, condition_operators, condition_comparisons, condition_logics):
+    def connect_row(self, target_index, pre_header, pre_row, connect_table, on_condition, condition_target_index, condition_operators, condition_comparisons, condition_logics, aggregation, aggregation_values):
         table = connect_table.pop(0)
         left_c = on_condition.pop(0)
         on_condition.pop(0)
@@ -211,11 +211,16 @@ class SQL_Database:
                     # WHEN check condition
                     if not self.check_condition([row[cti] for cti in condition_target_index], condition_operators, condition_comparisons, condition_logics):
                         continue
-
-                    values_to_print = []
-                    for ti in target_index:
-                        values_to_print.append(row[ti])
-                    print(values_to_print)
+                    # check if aggregation
+                    if aggregation:
+                        if not self.prepare_aggregation(row, aggregation, aggregation_values, target_index):
+                            print('Error: Cannot perform this aggregation.')
+                            return
+                    else:
+                        values_to_print = []
+                        for ti in target_index:
+                            values_to_print.append(row[ti])
+                        print(values_to_print)
     def create_group_tables(self, table, grouping_c):
         # split the table to different group table (each group one table)
         group_dict = {}
@@ -228,8 +233,6 @@ class SQL_Database:
         # Use try-except block to handle exceptions
         try:
             os.mkdir('sql_grouping')
-            shutil.rmtree(directory_to_delete)
-            print(f"The directory {directory_to_delete} has been deleted successfully.")
         except:
             shutil.rmtree(directory_to_delete)
             os.mkdir('sql_grouping')
@@ -251,6 +254,7 @@ class SQL_Database:
                     # Create and write to the CSV file
                     with open(f'sql_grouping/{table}/table_{unique_group}.csv', mode='w', newline='') as file:
                         writer = csv.writer(file)
+                        writer.writerow(header)
                         writer.writerow(r)
                     unique_group+=1
                 else:
@@ -267,6 +271,60 @@ class SQL_Database:
             # Use json.dump() to write the data to a file
             json.dump(group_table_info, file, indent=4)  # 'indent=4' for pretty-printing
 
+    def prepare_aggregation(self, row, aggregation, aggregation_values, target_index):
+        for i, agg in enumerate(aggregation):
+            agg_operator = agg[0]
+            agg_target_i = agg[1]
+            target_value = row[target_index[agg_target_i]]
+            if target_value == '': ## NULL value
+                return True
+            if agg_operator == 'CNT':
+                if aggregation_values[i] == None: # initialize value
+                    aggregation_values[i] = 1
+                else :
+                    aggregation_values[i] += 1
+            elif agg_operator == 'MX':
+                if aggregation_values[i] == None: # initialize value
+                    aggregation_values[i] = target_value
+                else:
+                    aggregation_values[i] = max(target_value,aggregation_values[i])
+            elif agg_operator == 'MN':
+                if aggregation_values[i] == None: # initialize value
+                    aggregation_values[i] = target_value
+                else:
+                    aggregation_values[i] = min(target_value,aggregation_values[i])
+            elif agg_operator == 'SM':
+                if type(target_value) != int:
+                    return False
+                if aggregation_values[i] == None: # initialize value
+                    aggregation_values[i] = target_value
+                else:
+                    aggregation_values[i] = target_value+aggregation_values[i]
+            elif agg_operator == 'AVRG':
+                if not (type(target_value) == int or type(target_value) == float):
+                    return False
+                if aggregation_values[i] == None: # initialize value
+                    aggregation_values[i] = [target_value,1]
+                else:
+                    aggregation_values[i][0] += target_value
+                    aggregation_values[i][1] += 1
+        return True
+        
+    def output_aggregation(self, values_to_print, aggregation, aggregation_values):
+        for i, agg in enumerate(aggregation):
+            agg_operator = agg[0]
+            agg_target_i = agg[1]
+            if agg_operator == 'CNT':
+                values_to_print[agg_target_i] = aggregation_values[i]
+            elif agg_operator == 'MX':
+                values_to_print[agg_target_i] = aggregation_values[i]
+            elif agg_operator == 'MN':
+                values_to_print[agg_target_i] = aggregation_values[i]
+            elif agg_operator == 'SM':
+                values_to_print[agg_target_i] = aggregation_values[i]
+            elif agg_operator == 'AVRG':
+                values_to_print[agg_target_i] = aggregation_values[i][0]/aggregation_values[i][1]
+        return
     def get(self, table, columns, connect_table=None, on_condition=None, conditions=None, grouping=None, ordering=None, order_by=None):
         print(f"output columns {columns} from table {table} connect with table {connect_table} on {on_condition} with conditions {conditions} gather by {grouping} order by {order_by} in {ordering} order")
         #### parse condition (WHEN)
@@ -329,7 +387,30 @@ class SQL_Database:
                     for t in self.tables[ct]:
                         tables_cols_with_name.append(ct+'.'+t)
         target_index = []
-        for c in columns:
+        aggregation = []
+        aggr_c = False
+        normal_c = False
+        for i, col in enumerate(columns):
+            if re.search("(^CNT\(|^MX\(|^MN\(|^SM\(|^AVRG\().+\)$",col):
+                if not grouping:
+                   print('Error: cannot perform aggregation without grouping (GATHER_BY)')
+                   return
+                if normal_c:
+                    print('Error: cannot project normal column with aggragation except the grouping column')
+                    return
+                brak_i = col.index('(')
+                c = col[brak_i+1:-1]
+                aggregation.append((col[:brak_i],i))
+                aggr_c = True
+            else:
+                c = col
+                if grouping:
+                    if not (c == grouping_c or c == f'{grouping_t}.{grouping_c}'):
+                        if aggr_c:
+                            print('Error: cannot project normal column with aggragation except the grouping column')
+                            return
+                        normal_c = True
+                
             if '.' in c: ## ex Customer.name
                 if c not in tables_cols_with_name: 
                     print(f"Column {c} doesn't exist or unable to get.")
@@ -342,6 +423,7 @@ class SQL_Database:
                     return
                 else:
                     target_index.append(tables_cols.index(c))
+
         condition_target_index = []
 
         if condition_targets:
@@ -371,6 +453,7 @@ class SQL_Database:
         print(column_print)
         print('-'*len(column_print))
         for table_chunk_num in metadata:
+            aggregation_values = [None]*len(aggregation)
             with open(f'{table_dir}/{table}/table_{table_chunk_num}.csv', 'r') as csvfile:
                 # Create a CSV reader object
                 csvreader = csv.reader(csvfile)
@@ -387,23 +470,34 @@ class SQL_Database:
                 if not self.check_condition(condition_input, condition_operators, condition_comparisons, condition_logics):
                     continue
                 if connect_table:
-                    self.connect_row(target_index, header, row, connect_table.copy(), on_condition.copy(), condition_target_index, condition_operators, condition_comparisons, condition_logics)
+                    self.connect_row(target_index, header, row, connect_table.copy(), on_condition.copy(), condition_target_index, condition_operators, condition_comparisons, condition_logics, aggregation, aggregation_values)
                 else:
                     # WHEN check condition
                     if not self.check_condition([row[cti] for cti in condition_target_index], condition_operators, condition_comparisons, condition_logics):
                         continue
-
-                    values_to_print = []
-                    for ti in target_index:
-                        values_to_print.append(row[ti])
-                    print(values_to_print)
+                    # check if aggregation
+                    if aggr_c:
+                        if not self.prepare_aggregation(row, aggregation, aggregation_values, target_index):
+                            print('Error: Cannot perform this aggregation.')
+                            return
+                    else:
+                        values_to_print = []
+                        for ti in target_index:
+                            values_to_print.append(row[ti])
+                        print(values_to_print)
+            if aggr_c:
+                values_to_print = []
+                for ti in target_index:
+                    values_to_print.append(row[ti])
+                self.output_aggregation(values_to_print, aggregation, aggregation_values)
+                print(values_to_print)
         #### delete grouping directory if appllicable
         # Specify the directory you want to delete
         directory_to_delete = "sql_grouping"
         # Use try-except block to handle exceptions
         try:
             shutil.rmtree(directory_to_delete)
-            print(f"The directory {directory_to_delete} has been deleted successfully.")
+            #print(f"The directory {directory_to_delete} has been deleted successfully.")
         except OSError as e:
             print(f"Error: {e.strerror}")
 
