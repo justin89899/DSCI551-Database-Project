@@ -682,6 +682,9 @@ class noSQL_Database:
                         key_to_split = next(iter(search_criteria))
                         group_value = get_nested_value(data, key_to_split.split('.'))
                         grouped_records[group_value].append(data)
+                    if group_by_field != None:
+                        group_value = get_nested_value(record, group_by_field.split('.')) if group_by_field else 'default'
+                        grouped_records[group_value].append(record)
 
         # print(grouped_records)
         # Output would be [{'name': 'John Doe', 'age': 30, 'city': 'New York'}] assuming these are the only matching records
