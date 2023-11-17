@@ -275,7 +275,13 @@ class SQL_Database:
         for i, agg in enumerate(aggregation):
             agg_operator = agg[0]
             agg_target_i = agg[1]
-            target_value = row[target_index[agg_target_i]]
+            if target_index[agg_target_i] =='*':
+                target_value = '*'
+                if agg_operator != 'CNT':
+                    print('Error: can only use CNT with * in aggregation' )
+                    return False
+            else:
+                target_value = row[target_index[agg_target_i]]
             if target_value == '': ## NULL value
                 return True
             if agg_operator == 'CNT':
@@ -325,6 +331,189 @@ class SQL_Database:
             elif agg_operator == 'AVRG':
                 values_to_print[agg_target_i] = aggregation_values[i][0]/aggregation_values[i][1]
         return
+    def sort_table(self, order_table, order_index, ordering):
+        def sort_one_file(order_table,table_chunk_num,order_index,ordering):
+            with open(f'sql_tables/{order_table}/table_{table_chunk_num}.csv', 'r') as csvfile:
+                # Create a CSV reader object
+                csvreader = csv.reader(csvfile)
+                header = next(csvreader)
+                rows = list(csvreader)
+            unsorted_target = []
+            for r in rows:
+                unsorted_target.append(r[order_index])
+            sorted_index = sorted(range(len(unsorted_target)), key=lambda i: unsorted_target[i],reverse=(ordering=='DSC'))
+            with open(f'sql_tables/{order_table}/table_{table_chunk_num}.csv', 'w', newline='') as csvfile:
+                # Create a writer object
+                csvwriter = csv.writer(csvfile)
+                csvwriter.writerow(header)
+                for si in sorted_index:
+                    # Write the new row
+                    csvwriter.writerow(rows[si])
+        def merge_blocks(left_blocks, right_blocks, order_table, order_index, ordering):
+            file_nums = []
+            for n in left_blocks:
+                file_nums.append(n)
+            for n in right_blocks:
+                file_nums.append(n)
+            unread_left_blocks = len(left_blocks)
+            unread_right_blocks = len(right_blocks)
+            with open(f'sql_tables/{order_table}/metadata.json', 'r') as file:
+                # Load JSON data from the file into a Python object
+                metadata = json.load(file)
+            left_b = left_blocks.pop(0)
+            right_b = right_blocks.pop(0)
+            left_count = metadata[left_b]
+            right_count = metadata[right_b]
+            wrote_file_num = int(file_nums[0])
+            wrote_count = 0
+            wrote = []
+            csvfile_l = open(f'sql_tables/{order_table}/table_{left_b}.csv', 'r')
+            csvreader_l = csv.reader(csvfile_l)
+            header = next(csvreader_l)
+            csvfile_r = open(f'sql_tables/{order_table}/table_{right_b}.csv', 'r')
+            csvreader_r = csv.reader(csvfile_r)
+            next(csvreader_r)
+            l = next(csvreader_l)
+            r = next(csvreader_r)
+            while(unread_left_blocks and unread_right_blocks):
+                while(left_count and right_count):
+                    if ordering == 'ASC':
+                        if l[order_index] <= r[order_index]:
+                            wrote.append(l)
+                            left_count-=1
+                            if left_count != 0:
+                                l = next(csvreader_l)
+                        else:
+                            wrote.append(r)
+                            right_count-=1
+                            if right_count != 0:
+                                r = next(csvreader_r)
+                    else:
+                        if l[order_index] >= r[order_index]:
+                            wrote.append(l)
+                            left_count-=1
+                            if left_count != 0:
+                                l = next(csvreader_l)
+                        else:
+                            wrote.append(r)
+                            right_count-=1
+                            if right_count != 0:
+                                r = next(csvreader_r)
+                    wrote_count+=1
+                    if wrote_count == 2000:
+                        with open(f'sql_tables/{order_table}/table_{wrote_file_num}_temp.csv', 'w', newline='') as csvfile:
+                            # Create a writer object
+                            csvwriter = csv.writer(csvfile)
+                            csvwriter.writerow(header)
+                            for w in wrote:
+                                csvwriter.writerow(w)
+                        wrote = []
+                        wrote_file_num+=1
+                        wrote_count = 0
+                if left_count == 0:
+                    unread_left_blocks -= 1
+                    if unread_left_blocks > 0:
+                        left_b = left_blocks.pop(0)
+                        left_count = metadata[left_b]
+                        csvfile_l = open(f'sql_tables/{order_table}/table_{left_b}.csv', 'r')
+                        csvreader_l = csv.reader(csvfile_l)
+                        next(csvreader_l)
+                        l = next(csvreader_l)
+                else:
+                    unread_right_blocks -= 1
+                    if unread_right_blocks > 0:
+                        right_b = right_blocks.pop(0)
+                        right_count = metadata[right_b]
+                        csvfile_r = open(f'sql_tables/{order_table}/table_{right_b}.csv', 'r')
+                        csvreader_r = csv.reader(csvfile_r)
+                        next(csvreader_r)
+                        r = next(csvreader_r)
+            while(unread_left_blocks != 0):
+                while(left_count):
+                    wrote.append(l)
+                    left_count-=1
+                    if left_count != 0:
+                        l = next(csvreader_l)
+                    wrote_count+=1
+                    if wrote_count == 2000:
+                        with open(f'sql_tables/{order_table}/table_{wrote_file_num}_temp.csv', 'w', newline='') as csvfile:
+                            # Create a writer object
+                            csvwriter = csv.writer(csvfile)
+                            csvwriter.writerow(header)
+                            for w in wrote:
+                                csvwriter.writerow(w)
+                        wrote = []
+                        wrote_file_num+=1
+                        wrote_count = 0
+                unread_left_blocks -= 1
+                if unread_left_blocks > 0:
+                    left_b = left_blocks.pop(0)
+                    left_count = metadata[left_b]
+                    csvfile_l = open(f'sql_tables/{order_table}/table_{left_b}.csv', 'r')
+                    csvreader_l = csv.reader(csvfile_l)
+                    next(csvreader_l)
+                    l = next(csvreader_l)
+            while(unread_right_blocks != 0):
+                while(right_count):
+                    wrote.append(r)
+                    right_count-=1
+                    if right_count != 0:
+                        r = next(csvreader_r)
+                    wrote_count+=1
+                    if wrote_count == 2000:
+                        with open(f'sql_tables/{order_table}/table_{wrote_file_num}_temp.csv', 'w', newline='') as csvfile:
+                            # Create a writer object
+                            csvwriter = csv.writer(csvfile)
+                            csvwriter.writerow(header)
+                            for w in wrote:
+                                csvwriter.writerow(w)
+                        wrote = []
+                        wrote_file_num+=1
+                        wrote_count = 0
+                unread_right_blocks -= 1
+                if unread_right_blocks > 0:
+                    right_b = right_blocks.pop(0)
+                    right_count = metadata[right_b]
+                    csvfile_r = open(f'sql_tables/{order_table}/table_{right_b}.csv', 'r')
+                    csvreader_r = csv.reader(csvfile_r)
+                    next(csvreader_r)
+                    r = next(csvreader_r)
+            if wrote_count != 0:
+                with open(f'sql_tables/{order_table}/table_{wrote_file_num}_temp.csv', 'w', newline='') as csvfile:
+                    # Create a writer object
+                    csvwriter = csv.writer(csvfile)
+                    csvwriter.writerow(header)
+                    for w in wrote:
+                        csvwriter.writerow(w)
+            for f in file_nums:
+                os.remove(f'sql_tables/{order_table}/table_{f}.csv')
+                os.rename(f'sql_tables/{order_table}/table_{f}_temp.csv', f'sql_tables/{order_table}/table_{f}.csv')
+
+        with open(f'sql_tables/{order_table}/metadata.json', 'r') as file:
+            # Load JSON data from the file into a Python object
+            metadata = json.load(file)
+        sorted_blocks = []
+        new_sorted_blocks = []
+        block_num = len(metadata)
+        unsorted_num = len(metadata)
+
+        # Merge sort
+        # step 1: sort each chunk of first
+        for table_chunk_num in metadata:
+            sort_one_file(order_table,table_chunk_num,order_index,ordering)
+            sorted_blocks.append([table_chunk_num])
+        # step 2 merge each chunk
+        new_sorted_blocks = sorted_blocks.copy()
+        while len(new_sorted_blocks) > 1:
+            new_sorted_blocks = []
+            while len(sorted_blocks) > 1:
+                left = sorted_blocks.pop(0)
+                right = sorted_blocks.pop(0)
+                merge_blocks(left.copy(),right.copy(),order_table,order_index,ordering)
+                new_sorted_blocks.append(left+right)
+            if len(sorted_blocks) == 1:
+                new_sorted_blocks.append(sorted_blocks[0])
+            sorted_blocks = new_sorted_blocks.copy()
     def get(self, table, columns, connect_table=None, on_condition=None, conditions=None, grouping=None, ordering=None, order_by=None):
         print(f"output columns {columns} from table {table} connect with table {connect_table} on {on_condition} with conditions {conditions} gather by {grouping} order by {order_by} in {ordering} order")
         #### parse condition (WHEN)
@@ -332,6 +521,32 @@ class SQL_Database:
         if not valid_condition:
             print("Error: Invalid condition.")
             return
+        
+        # Check Ordering
+        order_by = order_by[0]
+        order_table = None
+        order_index = None
+        if order_by:
+            if '.' not in order_by:
+                if order_by in self.tables[table]:
+                    order_table = table
+                    order_index = self.tables[table].index(order_by)
+                else:
+                    if connect_table:
+                        for ct in connect_table:
+                            if order_by in self.tables[ct]:
+                                order_table = ct
+                                order_index = self.tables[ct].index(order_by)
+            else:
+                order_t = order_by.split('.')[0]
+                order_c = order_by.split('.')[1]
+                if order_t == table or (connect_table and order_t in connect_table):
+                    order_table = order_t
+                    order_index = self.tables[order_t].index(order_c)
+            if order_table == None:
+                print('Error: Invalid Ordering column or table.')
+                return
+            self.sort_table(order_table, order_index, ordering)
         
         #### check grouping 
         if grouping:
@@ -419,8 +634,19 @@ class SQL_Database:
                     target_index.append(tables_cols_with_name.index(c))
             else:
                 if c not in tables_cols:
-                    print(f"Column {c} doesn't exist or unable to get.")
-                    return
+                    if c == '*':
+                        if aggr_c:
+                            target_index.append('*')
+                        else: 
+                            if len(columns) != 1:
+                                print('Error: Cannot project * and other column at the same time. only * is needed.')
+                                return
+                            target_index = [tc for tc in range(len(tables_cols))]
+                            columns = [tc for tc in tables_cols]
+                            break
+                    else:
+                        print(f"Column {c} doesn't exist or unable to get.")
+                        return
                 else:
                     target_index.append(tables_cols.index(c))
 
@@ -488,7 +714,10 @@ class SQL_Database:
             if aggr_c:
                 values_to_print = []
                 for ti in target_index:
-                    values_to_print.append(row[ti])
+                    if ti == '*':
+                        values_to_print.append('*')
+                    else:
+                        values_to_print.append(row[ti])
                 self.output_aggregation(values_to_print, aggregation, aggregation_values)
                 print(values_to_print)
         #### delete grouping directory if appllicable
@@ -499,7 +728,8 @@ class SQL_Database:
             shutil.rmtree(directory_to_delete)
             #print(f"The directory {directory_to_delete} has been deleted successfully.")
         except OSError as e:
-            print(f"Error: {e.strerror}")
+            pass
+            #$print(f"Error: {e.strerror}")
 
 class noSQL_Database:
     def __init__(self, schema):

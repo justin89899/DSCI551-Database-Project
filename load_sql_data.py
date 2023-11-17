@@ -40,7 +40,8 @@ def load_all():
             if extracted_columns[1] not in customer_unique:
                 customer_id_count+=1
                 customer_unique.append(extracted_columns[1])
-                rows.append([customer_id_count]+extracted_columns)
+                extracted_columns[2] = extracted_columns[2].zfill(2)
+                rows.append([str(customer_id_count).zfill(5)]+extracted_columns)
         # Create and write to the CSV file
         with open(table_csv_filename, mode='w', newline='') as file:
             writer = csv.writer(file)
@@ -90,7 +91,7 @@ def load_all():
             if product_name not in product_unique:
                 product_id_count+=1
                 product_unique.append(product_name)
-                rows.append([product_id_count]+[product_name])
+                rows.append([str(product_id_count).zfill(5)]+[product_name])
         # Create and write to the CSV file
         with open(table_csv_filename, mode='w', newline='') as file:
             writer = csv.writer(file)
@@ -141,15 +142,15 @@ def load_all():
             # get the customer_id
             for id,eml in enumerate(customer_unique):
                 if cust_email==eml:
-                    extracted_columns[0] = id+1
+                    extracted_columns[0] = str(id+1).zfill(5)
             
             product_name = extracted_columns[1]
             # get the product_id
             for id,prod in enumerate(product_unique):
                 if product_name==prod:
-                    extracted_columns[1] = id+1
+                    extracted_columns[1] = str(id+1).zfill(5)
 
-            rows.append([i+1]+extracted_columns)
+            rows.append([str(i+1).zfill(5)]+extracted_columns)
         # Create and write to the CSV file
         with open(table_csv_filename, mode='w', newline='') as file:
             writer = csv.writer(file)
@@ -259,4 +260,4 @@ def load_all():
 
 
 
-
+load_all()
