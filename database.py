@@ -13,27 +13,45 @@ class SQL_Database:
                        "Ticket":["ticket_id", "customer_id", "product_id", "date_of_purchase", "ticket_type", "ticket_subject", "ticket_description", "ticket_status", "resolution", "priority", "channel", "first_response_time", "time_to_resolution", "rating"]}
         self.condition_operators = ["=", ">", "<", ">=", "<=", "!=", "LIKE", "IN", "NOTIN"] #NOTIN is NOT IN
         self.condition_logics = ["AND", "OR"]
-    def insert(self, table_info, values):
+        self.tables_primary_key = {"Customer":"customer_id",
+                       "Product":"product_id",
+                       "Ticket":"ticket_id"}
+        self.tables_foreign_key = {"Customer":{},
+                       "Product":{},
+                       "Ticket":{"Customer":"customer_id", "Product":"product_id"}}
+    def check_key(self, table, value_list):
+        return True
+    
+    def insert(self, table, values):
         
-        table_name = table_info[0]
-        table_columns = " ".join(table_info[1:]).replace("(","").replace(")","").replace(",","")
-        table_columns = table_columns.split(" ")
-        print(f"Put values {values} to table {table_name} on columns {table_columns}")
+        print(f"Put values {values} to table {table} on columns {self.tables[table]}")
+        if table not in self.tables:
+            print(f"Error: {table} is not a valid table to PUT.")
+            return
         
-        if table_name not in self.tables:
-            print(f"Table {table_name} doesn't exist.")
+        values_list = values.replace(' ','').split(',')
+        for _ in range(len(self.tables[table]) - len(values_list)):
+            values_list.append('')
+        
+        
+        if len(values_list) > len(self.tables[table]):
+            print("Error: inserted value exeed the column length.")
             return
-        if len(values) != len(self.tables[table_name]):
-            print("Number of columns doesn't match.")
-            return
+        
         # Open the JSON file
-        with open(f'sql_tables/{table_name}/metadata.json', 'r') as file:
+        with open(f'sql_tables/{table}/metadata.json', 'r') as file:
             # Load JSON data from the file into a Python object
             metadata = json.load(file)
-            last_chunk = max(metadata)
-            if metadata[last_chunk]>=2000: # if the last chunk is full then create new chunk
-                last_chunk += 1
-                metadata[last_chunk] = 0
+        last_chunk = metadata[-1]
+        if metadata[last_chunk]>=2000: # if the last chunk is full then create new chunk
+            last_chunk += 1
+            metadata[last_chunk] = 0
+            # with open(table_csv_filename, mode='w', newline='') as file:
+            #             writer = csv.writer(file)
+            #             product_table_info[table_num] = len(rows)-1
+            #             # Write rows to the CSV file
+            #             for r in rows:
+            #                 writer.writerow(r)
 
     def delete(self, table_name, items, condition):
         print(f"delete items {items} from table {table_name} on condition {condition}")
