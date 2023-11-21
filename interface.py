@@ -129,6 +129,8 @@ def main():
                         WHEN_index = parts.index("WHEN")
                         table_name = parts[FROM_index+1:WHEN_index]
                         conditions = parts[WHEN_index+1:]
+                    else:
+                        table_name = parts[FROM_index+1:]
                     # Parse the items
                     items = [i.replace(",", "") for i in parts[1:FROM_index]]
 

@@ -18,53 +18,276 @@ class SQL_Database:
                        "Ticket":"ticket_id"}
         self.tables_foreign_key = {"Customer":{},
                        "Product":{},
-                       "Ticket":{"Customer":"customer_id", "Product":"product_id"}}
-    def check_key(self, table, value_list):
+                       "Ticket":{1:("Customer", "customer_id"),
+                                 2:("Product", "product_id")}}
+    def check_key(self, table, value_list, ignore=None):
+        # step 1: check primary key
+        pk_index = self.tables[table].index(self.tables_primary_key[table])
+        inserted_pk = value_list[pk_index]
+        if not inserted_pk: # check if the value is ''
+            print(f'Error:Primary key could not be null')
+            return False
+        # Open the JSON file
+        with open(f'sql_tables/{table}/metadata.json', 'r') as file:
+            # Load JSON data from the file into a Python object
+            metadata = json.load(file)
+        for table_chunk_num in metadata:
+            with open(f'sql_tables/{table}/table_{table_chunk_num}.csv', 'r') as csvfile:
+                # Create a CSV reader object
+                csvreader = csv.reader(csvfile)
+                header = next(csvreader)
+                for r in csvreader:
+                    if ignore and r == ignore:
+                        continue
+                    if r[pk_index] == inserted_pk:
+                        print(f'Error: Primary key {inserted_pk} exists. Could not PUT this row to table.')
+                        return False
+        
+        # step 2: check foreign key
+        
+        for i, fk in self.tables_foreign_key[table].items():
+            inserted_fk = value_list[i]
+            if not inserted_fk: # check if the value is ''
+                print(f'Error: Foreign key {self.tables[table][i]} could not be null')
+                return False
+            fk_table = fk[0]
+            fk_column = fk[1]
+            fk_index = self.tables[fk_table].index(fk_column)
+            fk_exist = False
+            # Open the JSON file
+            with open(f'sql_tables/{fk_table}/metadata.json', 'r') as file:
+                # Load JSON data from the file into a Python object
+                metadata = json.load(file)
+            for table_chunk_num in metadata:
+                with open(f'sql_tables/{fk_table}/table_{table_chunk_num}.csv', 'r') as csvfile:
+                    # Create a CSV reader object
+                    csvreader = csv.reader(csvfile)
+                    header = next(csvreader)
+                    for r in csvreader:
+                        if r[fk_index] == inserted_fk:
+                            fk_exist = True
+                            break
+                    if fk_exist:
+                        break
+            if not fk_exist:
+                print(f'Error: inserted value {inserted_fk} is foreign key, but it does not exist in foriegn table {fk_table}-{fk_column}')
+                return False
         return True
     
     def insert(self, table, values):
         
-        print(f"Put values {values} to table {table} on columns {self.tables[table]}")
         if table not in self.tables:
             print(f"Error: {table} is not a valid table to PUT.")
             return
         
-        values_list = values.replace(' ','').split(',')
+        values_list = values.split(',')
         for _ in range(len(self.tables[table]) - len(values_list)):
             values_list.append('')
-        
-        
+        for i, v in enumerate(values_list):
+            values_list[i] = v.strip(' ')
+
         if len(values_list) > len(self.tables[table]):
             print("Error: inserted value exeed the column length.")
             return
+        print(f"Put values {values_list} to table {table} on columns {self.tables[table]}")
+
+        if not self.check_key(table, values_list.copy()):
+            print("Error: Value check does'n pass, cannot insert this value to table")
+            return
+        # Open the JSON file
+        with open(f'sql_tables/{table}/metadata.json', 'r') as file:
+            # Load JSON data from the file into a Python object
+            metadata = json.load(file)
+        for c in metadata:
+            last_chunk = c
+        
+        print(last_chunk)
+        if metadata[last_chunk]>=2000: # if the last chunk is full then create new chunk
+            last_chunk += 1
+            metadata[last_chunk] = 0
+            with open(f'sql_tables/{table}/table_{last_chunk}.csv', mode='w', newline='') as file:
+                writer = csv.writer(file)
+                # Write rows to the CSV file
+                writer.writerow(self.tables[table]) #write header first
+                writer.writerow(values_list)
+        else:
+            with open(f'sql_tables/{table}/table_{last_chunk}.csv', mode='a', newline='') as file:
+                writer = csv.writer(file)
+                # Write rows to the CSV file
+                writer.writerow(values_list)
+        metadata[last_chunk] += 1
+        # Open the JSON file
+        with open(f'sql_tables/{table}/metadata.json', 'w') as file:
+            # save the new metadata to metadata json
+            json.dump(metadata, file, indent=4)
+        
+
+    def delete(self, table, items, conditions):
+        print(f"delete rows from table {table} on condition {conditions}")
+        table = table[0]
+        if table not in self.tables:
+            print(f"Error: Table {table} doesn't exist.")
+            return
+        if not conditions:
+            print(f'Error: Need condition(ex. WHEN name = Jane) to DROP data.')
+            return
+
+        #### parse condition (WHEN)
+        condition_targets, condition_operators, condition_comparisons, condition_logics, valid_condition = self.parse_condition(conditions)
+        if not valid_condition:
+            print("Error: Invalid condition.")
+            return
+        
+        condition_index = []
+        for ct in condition_targets:
+            if ct in self.tables[table]:
+                condition_index.append(self.tables[table].index(ct))
+            else:
+                print(f'Error: Column {ct} not in table {table}')
+                return
         
         # Open the JSON file
         with open(f'sql_tables/{table}/metadata.json', 'r') as file:
             # Load JSON data from the file into a Python object
             metadata = json.load(file)
-        last_chunk = metadata[-1]
-        if metadata[last_chunk]>=2000: # if the last chunk is full then create new chunk
-            last_chunk += 1
-            metadata[last_chunk] = 0
-            # with open(table_csv_filename, mode='w', newline='') as file:
-            #             writer = csv.writer(file)
-            #             product_table_info[table_num] = len(rows)-1
-            #             # Write rows to the CSV file
-            #             for r in rows:
-            #                 writer.writerow(r)
+        for table_chunk_num in metadata:
+            with open(f'sql_tables/{table}/table_{table_chunk_num}.csv', 'r') as csvfile:
+                # Create a CSV reader object
+                csvreader = csv.reader(csvfile)
+                header = next(csvreader)
+                rows = list(csvreader)
+            new_rows_index = []
+            for i,r in enumerate(rows):
+                condition_input = []
+                for cti in condition_index:
+                    condition_input.append(r[cti])
+                if self.check_condition(condition_input, condition_operators, condition_comparisons, condition_logics):
+                    print(f'delete:{r} from table {table}')
+                    metadata[table_chunk_num] -= 1
+                else:
+                    new_rows_index.append(i)
+            rows = [rows[i] for i in new_rows_index]
+            with open(f'sql_tables/{table}/table_{table_chunk_num}.csv', mode='w', newline='') as file:
+                writer = csv.writer(file)
+                # Write rows to the CSV file
+                writer.writerow(header)
+                for r in rows:
+                    writer.writerow(r)
+            # Open the JSON file
+            with open(f'sql_tables/{table}/metadata.json', 'w') as file:
+                # save the new metadata to metadata json
+                json.dump(metadata, file, indent=4)
+            
+    def update(self, table, values, conditions):
+        #print(f"update values {values} from table {table} on condition {conditions}")
+        if table not in self.tables:
+            print(f"Table {table} doesn't exist.")
+        
+        if not values:
+            print('Nothing to Change.')
+            return
+        
+        if not conditions:
+            print(f'Error: Need condition(ex. WHEN name = Jane) to Change data.')
+            return
+        
+        #### parse condition (WHEN)
+        condition_targets, condition_operators, condition_comparisons, condition_logics, valid_condition = self.parse_condition(conditions)
+        if not valid_condition:
+            print("Error: Invalid condition.")
+            return
+        condition_index = []
+        for ct in condition_targets:
+            if ct in self.tables[table]:
+                condition_index.append(self.tables[table].index(ct))
+            else:
+                print(f'Error: Column {ct} not in table {table}')
+                return
+        
+        ### parse values
 
-    def delete(self, table_name, items, condition):
-        print(f"delete items {items} from table {table_name} on condition {condition}")
-        if table_name not in self.tables:
-            print(f"Table {table_name} doesn't exist.")
-        if not condition:
-            for ele in items:
-                self.tables[table_name][ele] = None
+        # check if there are value that is spereate by space ex. 'Justin Chen' -> ["'Justin" , "Chen'""]
+        new_values = []
+        need_new = False
+        skip = 0
+        for i, c in enumerate(values):
+            if skip:
+                skip-=1
+                continue
+            if c.startswith('"') or c.startswith("'"):
+                new_sring = c[1:]+' '
+                temp_i = i
+                while not values[temp_i+1].endswith('"') and not values[temp_i+1].endswith("'"):
+                    new_sring+=values[temp_i+1]
+                    new_sring+=' '
+                    temp_i+=1
+                    skip+=1
+                new_sring+=values[temp_i+1][:-1]
+                skip+=1
+                new_values.append(new_sring)
+                need_new = True
+            else:
+                new_values.append(c)
+        if need_new:
+            values = new_values
+        print(f"update values {values} from table {table} on condition {conditions}")
 
-    def update(self, table_name, values, condition):
-        print(f"update values {values} from table {table_name} on condition {condition}")
-        if table_name not in self.tables:
-            print(f"Table {table_name} doesn't exist.")
+        values_change_map = {}
+        # check values in correct format and valid, and get value update index
+        if len(values) % 3 != 0:
+            print("Error: incorrect value format (Correct format: name = 'Jane Chen', age = 25)")
+            return
+
+        for i in range(int(len(values)/3)):
+            
+            col = values[i*3]
+            equal_sign =  values[i*3 + 1]
+            val = values[i*3 + 2]
+
+            if equal_sign != '=':
+                print("Error: incorrect value format (Correct format: name = 'Jane Chen', age = 25)")
+                return
+            
+            if col not in self.tables[table]:
+                print(f'Error: Column {col} not in table {table}')
+                return
+            values_change_map[self.tables[table].index(col)] = val
+
+        # Open the JSON file
+        with open(f'sql_tables/{table}/metadata.json', 'r') as file:
+            # Load JSON data from the file into a Python object
+            metadata = json.load(file)
+        for table_chunk_num in metadata:
+            with open(f'sql_tables/{table}/table_{table_chunk_num}.csv', 'r') as csvfile:
+                # Create a CSV reader object
+                csvreader = csv.reader(csvfile)
+                header = next(csvreader)
+                rows = list(csvreader)
+            
+            need_change = False
+            for i,r in enumerate(rows):
+                condition_input = []
+                for cti in condition_index:
+                    condition_input.append(r[cti])
+                if self.check_condition(condition_input, condition_operators, condition_comparisons, condition_logics):
+                
+                    new_r = r.copy()
+                    for vi in values_change_map:
+                        new_r[vi] = values_change_map[vi]
+                    if not self.check_key(table, new_r.copy(),ignore=r.copy()):
+                        print("Error: Value check doesn't pass, cannot update this value to table")
+                        return
+                    need_change = True
+                    rows[i] = new_r
+                    print(f'change:{r} from table {table} to {new_r}')
+            if need_change:
+                with open(f'sql_tables/{table}/table_{table_chunk_num}.csv', mode='w', newline='') as file:
+                    writer = csv.writer(file)
+                    # Write rows to the CSV file
+                    writer.writerow(header)
+                    for r in rows:
+                        writer.writerow(r)
+
     def check_condition(self, targets, operators, comparisons, logics):
 
         def sql_like_to_regex(pattern):
@@ -541,10 +764,10 @@ class SQL_Database:
             return
         
         # Check Ordering
-        order_by = order_by[0]
         order_table = None
         order_index = None
         if order_by:
+            order_by = order_by[0]
             if '.' not in order_by:
                 if order_by in self.tables[table]:
                     order_table = table
@@ -598,7 +821,7 @@ class SQL_Database:
             else:
                 print('Error: Wrong grouping format: table_name.column_name')
                 return
-        
+
         ##### Projection
         # check table name and columns
         tables_cols = []
@@ -669,7 +892,6 @@ class SQL_Database:
                     target_index.append(tables_cols.index(c))
 
         condition_target_index = []
-
         if condition_targets:
             for ct in condition_targets:
                 if '.' in ct: ## exustomer.name
@@ -684,7 +906,7 @@ class SQL_Database:
                         return
                     else:
                         condition_target_index.append(tables_cols.index(ct))
-
+        
         # Open the metadata JSON file
         table_dir = 'sql_tables'
         if grouping:
