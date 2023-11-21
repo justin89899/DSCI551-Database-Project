@@ -121,7 +121,65 @@ class SQL_Database:
             # save the new metadata to metadata json
             json.dump(metadata, file, indent=4)
         
-
+    def fill_chunks(self, table):
+        chunk_num_to_write_queue = []
+        # Open the JSON file
+        with open(f'sql_tables/{table}/metadata.json', 'r') as file:
+            # Load JSON data from the file into a Python object
+            metadata = json.load(file)
+        new_metadata = metadata.copy()
+        for c in metadata:
+            last_chunk_num = c
+        buffer = []
+        read_count = 0
+        for table_chunk_num in metadata:
+            if read_count or (metadata[table_chunk_num] < 2000 and table_chunk_num != last_chunk_num):
+                chunk_num_to_write_queue.append(table_chunk_num)
+                with open(f'sql_tables/{table}/table_{table_chunk_num}.csv', 'r') as csvfile:
+                    # Create a CSV reader object
+                    csvreader = csv.reader(csvfile)
+                    header = next(csvreader)
+                    for row in csvreader:
+                        buffer.append(row)
+                        read_count+=1
+                        # if buffer is full, write to new file
+                        if read_count == 2000:
+                            chunk_num_to_write = chunk_num_to_write_queue.pop(0)
+                            print('group')
+                            print(chunk_num_to_write)
+                            print(chunk_num_to_write_queue)
+                            with open(f'sql_tables/{table}/table_{chunk_num_to_write}.csv', mode='w', newline='') as file:
+                                writer = csv.writer(file)
+                                # Write rows to the CSV file
+                                writer.writerow(header) #write header first
+                                for r in buffer:
+                                    writer.writerow(r)
+                            new_metadata[chunk_num_to_write] = read_count
+                            buffer = []
+                            read_count = 0
+                            
+        if read_count:
+            print(f'left:{read_count}')
+            print(chunk_num_to_write_queue)
+            chunk_num_to_write = chunk_num_to_write_queue.pop(0)
+            with open(f'sql_tables/{table}/table_{chunk_num_to_write}.csv', mode='w', newline='') as file:
+                writer = csv.writer(file)
+                # Write rows to the CSV file
+                writer.writerow(header) #write header first
+                for r in buffer:
+                    writer.writerow(r)
+                new_metadata[chunk_num_to_write] = read_count
+                buffer = []
+                read_count = 0
+        for left_c in chunk_num_to_write_queue:
+            if os.path.exists(f'sql_tables/{table}/table_{left_c}.csv'):
+                os.remove(f'sql_tables/{table}/table_{left_c}.csv')
+                del new_metadata[left_c]
+        # Open the JSON file
+        with open(f'sql_tables/{table}/metadata.json', 'w') as file:
+            # save the new metadata to metadata json
+            json.dump(new_metadata, file, indent=4)
+        
     def delete(self, table, items, conditions):
         print(f"delete rows from table {table} on condition {conditions}")
         table = table[0]
@@ -177,7 +235,7 @@ class SQL_Database:
             with open(f'sql_tables/{table}/metadata.json', 'w') as file:
                 # save the new metadata to metadata json
                 json.dump(metadata, file, indent=4)
-            
+        self.fill_chunks(table)
     def update(self, table, values, conditions):
         #print(f"update values {values} from table {table} on condition {conditions}")
         if table not in self.tables:

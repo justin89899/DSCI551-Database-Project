@@ -20,7 +20,7 @@ def main():
         key_words = ["GET","FROM","CONNECT","WHEN","GATHER_BY","ASCEND_BY","DESCEND_BY","PUT","DROP","CHANGE"]
         while True:
             
-            query = input("Enter a query (or 'exit' to quit): ").strip()
+            query = input("Enter a query (or 'exit' to quit)> ").strip()
             start_time = time.time()
             if query.lower() == 'exit':
                 break
