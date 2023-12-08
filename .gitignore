@@ -1,5 +1,0 @@
-# ignore all csv file
-*.csv
-# ignore all json file
-*.json
-*.jsonl
