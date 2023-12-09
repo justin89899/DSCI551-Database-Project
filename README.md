@@ -39,6 +39,13 @@ Choose a database to use (SQL, noSQL) or exit:
 ```
 Choose a database to use (SQL, noSQL) or exit:
 ```
-insert SQL or noSQL to choose which database to use.
+Insert SQL or noSQL to choose which database to use.
 
-or insert 'exit' to terminate the program.
+or 
+
+Insert 'exit' to terminate the program.
+
+```
+Choose a database to use (SQL, noSQL) or exit:SQL
+MyDB> GET name FROM Customer
+```
