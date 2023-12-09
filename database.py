@@ -1092,9 +1092,9 @@ class noSQL_Database:
         # Step 2: Replace single quotes with double quotes
         valid_json_string = concatenated.replace("'", '"')
         search_criteria = json.loads(valid_json_string)
-        file_paths = ['filtered_data.jsonl', 'first_2000_records.json',
-                      'records_2000_to_4000.json',
-                      'records_4000_to_6000.json']
+        file_paths = ['nosql_tables/filtered_data.jsonl', 'nosql_tables/first_2000_records.json',
+                      'nosql_tables/records_2000_to_4000.json',
+                      'nosql_tables/records_4000_to_6000.json']
         def get_nested_value(dic, keys):
             """Recursively fetches nested values from a dictionary using a list of keys."""
             for key in keys:
@@ -1131,9 +1131,9 @@ class noSQL_Database:
         # Step 2: Replace single quotes with double quotes
         valid_json_string = concatenated.replace("'", '"')
         search_criteria = json.loads(valid_json_string)
-        file_paths = ['filtered_data.jsonl', 'first_2000_records.json',
-                      'records_2000_to_4000.json',
-                      'records_4000_to_6000.json']
+        file_paths = ['nosql_tables/filtered_data.jsonl', 'nosql_tables/first_2000_records.json',
+                      'nosql_tables/records_2000_to_4000.json',
+                      'nosql_tables/records_4000_to_6000.json']
 
         def get_nested_value(dic, keys):
             """Recursively fetches nested values from a dictionary using a list of keys."""
