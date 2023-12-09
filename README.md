@@ -76,3 +76,16 @@ MyDB> GET name, email FROM Customer WHEN name LIKE %James
 ['Jacob James', 'jonathan60@example.org']
 Run time: 0.03823590278625488 seconds.
 ```
+
+# example queries
+Projection: GET name, email FROM Customer
+
+Filtering:  GET name, email FROM Customer WHEN name LIKE %James
+
+Join: GET ticket_id, p_name, rating FROM Ticket CONNECT Product ON Ticket.product_id = Product.product_id
+
+Grouping: GET gender, name FROM Customer GATHER_BY Customer.gender WHEN name LIKE %James  
+
+Aggregation: GET rating, CNT(rating) FROM Ticket GATHER_BY Ticket.rating
+
+Ordering: GET gender, name, age FROM Customer GATHER_BY Customer.gender WHEN name LIKE %James ASCEND_BY age
