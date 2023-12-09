@@ -15,13 +15,13 @@ this file handles all the physical and logical operation of queries.
 ### interface.py
 this file is for user interaction interface. Inputing queries.
 
-### nosql_tables
+### nosql_tables/
 stores the data of noSQL database.
 
-### sql_tables
+### sql_tables/
 stores the data of SQL database.
 
-### dataset
+### dataset/
 stores the original dataset.
 
 ### load_sql_data.py
@@ -40,4 +40,5 @@ Choose a database to use (SQL, noSQL) or exit:
 Choose a database to use (SQL, noSQL) or exit:
 ```
 insert SQL or noSQL to choose which database to use.
+
 or insert 'exit' to terminate the program.
