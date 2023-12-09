@@ -47,5 +47,32 @@ Insert 'exit' to terminate the program.
 
 ```
 Choose a database to use (SQL, noSQL) or exit:SQL
-MyDB> GET name FROM Customer
+MyDB> 
+```
+Now you can query from the database.
+
+```
+MyDB> GET name, email FROM Customer WHEN name LIKE %James
+|name | email|
+--------------
+['Ashley James', 'marcus21@example.org']
+['Clifford James', 'victoriawells@example.net']
+['Catherine James', 'steven52@example.net']
+['Chelsea James', 'dana94@example.net']
+['Shane James', 'mhoward@example.com']
+['Richard James', 'dennis52@example.org']
+['Gregory James', 'hodgeschad@example.com']
+['Rachel James', 'meghan71@example.net']
+['Dawn James', 'sean39@example.net']
+['Shelby James', 'colleencline@example.com']
+['Timothy James', 'cathybarry@example.com']
+['Blake James', 'gthompson@example.org']
+['David James', 'nunezcarol@example.com']
+['Mary James', 'fwallace@example.net']
+['David James', 'skramer@example.com']
+['Eric James', 'xmartin@example.net']
+['Holly James', 'erogers@example.net']
+['Linda James', 'jennifer40@example.org']
+['Jacob James', 'jonathan60@example.org']
+Run time: 0.03823590278625488 seconds.
 ```
