@@ -165,29 +165,28 @@ def load_all():
         json.dump(ticket_table_info, file, indent=4)  # 'indent=4' for pretty-printing
 
     #nosql
-    input_file_path = 'roam_prescription_based_prediction.jsonl'
-    output_file_path = 'first_2000.json'
+    input_file_path = 'dataset/data_records.json'
+    output_file_path = 'nosql_tables/first_2000.json'
 
-    # Open the input file and read the JSON objects line by line
-    records = []
-    with open(input_file_path, 'r') as file:
+    def read_multiple_json_objects(file_path):
+        with open(file_path, 'r') as file:
+            data = file.read()
+
+        # Attempt to decode JSON by splitting the file contents
         try:
-            while len(records) < 2000:
-                line = next(file)  # Read the next line
-                # Convert line into a JSON object and append to records list
-                record = json.loads(line)
-                records.append(record['cms_prescription_counts'])
-                records.append(record['npi'])
-                records.append(record['provider_variables'])
-        except StopIteration:
-            # Reached the end of the file before reading 2000 records
-            pass
+            # Split the data and filter out any empty values that split may produce
+            json_objects = [json.loads(obj) for obj in data.split('\n') if obj.strip()]
+            return json_objects
         except json.JSONDecodeError as e:
-            print(f"An error occurred while parsing JSON: {e}")
-
-    # Write the first 2000 'provider_variables' records to a new file
-    with open(output_file_path, 'w') as file:
-        json.dump(records, file, indent=4)
+            print(f"An error occurred: {e}")
+            return None
+    # Replace 'your_file.json' with the path to your JSON file
+    json_objects = read_multiple_json_objects('dataset/data_records.json')
+    # Now that we have a list of JSON objects, we can proceed to save the first 2000
+    if json_objects and len(json_objects) > 2000:
+        first_2000_records = json_objects[:2000]
+        with open('nosql_tables/first_2000_records.json', 'w') as outfile:
+            json.dump(first_2000_records, outfile, indent=4)
 
     def read_chunk_json_objects(file_path, start_record, end_record):
         # Read the entire file into a single string
@@ -216,11 +215,11 @@ def load_all():
             return None
 
     # Replace 'your_file.json' with the path to your JSON file
-    json_objects = read_chunk_json_objects('roam_prescription_based_prediction.jsonl', 2000, 4000)
+    json_objects = read_chunk_json_objects('dataset/data_records.json', 2000, 4000)
 
     # Now that we have the records, save them to a new JSON file
     if json_objects:
-        with open('records_2000_to_4000.json', 'w') as outfile:
+        with open('nosql_tables/records_2000_to_4000.json', 'w') as outfile:
             json.dump(json_objects, outfile, indent=4)
 
     def read_chunk_json_objects(file_path, start_record, end_record):
@@ -251,11 +250,11 @@ def load_all():
 
 
     # Replace 'your_file.json' with the path to your JSON file
-    json_objects = read_chunk_json_objects('roam_prescription_based_prediction.jsonl', 4000, 6000)
+    json_objects = read_chunk_json_objects('dataset/data_records.json', 4000, 6000)
 
     # Now that we have the records, save them to a new JSON file
     if json_objects:
-        with open('records_4000_to_6000.json', 'w') as outfile:
+        with open('nosql_tables/records_4000_to_6000.json', 'w') as outfile:
             json.dump(json_objects, outfile, indent=4)
 
 
