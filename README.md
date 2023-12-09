@@ -9,7 +9,8 @@ $ ls
 README.md               database.py             interface.py            nosql_tables
 __pycache__             dataset                 load_sql_data.py        sql_tables
 ```
-### database.py- this file handles all the physical and logical operation of queries.
+### database.py- 
+this file handles all the physical and logical operation of queries.
 
 ### interface.py- this file is for user interaction interface. Inputing queries.
 
