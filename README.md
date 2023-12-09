@@ -9,6 +9,13 @@ $ ls
 README.md               database.py             interface.py            nosql_tables
 __pycache__             dataset                 load_sql_data.py        sql_tables
 ```
+database.py- this file handles all the physical and logical operation of queries.
+interface.py- this file is for user interaction interface. Inputing queries.
+nosql_tables- stores the data of noSQL database.
+sql_tables- stores the data of SQL database.
+dataset- stores the original dataset.
+load_sql_data.py- this file tranfer the original data into tables and chunks for our database use.
+
 
 # Running the Program
 Instructions on how to run the program:
