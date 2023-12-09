@@ -89,7 +89,7 @@ class SQL_Database:
         if len(values_list) > len(self.tables[table]):
             print("Error: inserted value exeed the column length.")
             return
-        print(f"Put values {values_list} to table {table} on columns {self.tables[table]}")
+        #print(f"Put values {values_list} to table {table} on columns {self.tables[table]}")
 
         if not self.check_key(table, values_list.copy()):
             print("Error: Value check does'n pass, cannot insert this value to table")
@@ -181,7 +181,7 @@ class SQL_Database:
             json.dump(new_metadata, file, indent=4)
         
     def delete(self, table, items, conditions):
-        print(f"delete rows from table {table} on condition {conditions}")
+        #print(f"delete rows from table {table} on condition {conditions}")
         table = table[0]
         if table not in self.tables:
             print(f"Error: Table {table} doesn't exist.")
@@ -288,7 +288,7 @@ class SQL_Database:
                 new_values.append(c)
         if need_new:
             values = new_values
-        print(f"update values {values} from table {table} on condition {conditions}")
+        #print(f"update values {values} from table {table} on condition {conditions}")
 
         values_change_map = {}
         # check values in correct format and valid, and get value update index
@@ -814,7 +814,7 @@ class SQL_Database:
                 new_sorted_blocks.append(sorted_blocks[0])
             sorted_blocks = new_sorted_blocks.copy()
     def get(self, table, columns, connect_table=None, on_condition=None, conditions=None, grouping=None, ordering=None, order_by=None):
-        print(f"output columns {columns} from table {table} connect with table {connect_table} on {on_condition} with conditions {conditions} gather by {grouping} order by {order_by} in {ordering} order")
+        #print(f"output columns {columns} from table {table} connect with table {connect_table} on {on_condition} with conditions {conditions} gather by {grouping} order by {order_by} in {ordering} order")
         #### parse condition (WHEN)
         condition_targets, condition_operators, condition_comparisons, condition_logics, valid_condition = self.parse_condition(conditions)
         if not valid_condition:
