@@ -34,3 +34,10 @@ Instructions on how to run the program:
 $ python3 interface.py
 Choose a database to use (SQL, noSQL) or exit:
 ```
+
+# Interactive User Interface
+```
+Choose a database to use (SQL, noSQL) or exit:
+```
+insert SQL or noSQL to choose which database to use.
+or insert 'exit' to terminate the program.
