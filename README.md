@@ -78,6 +78,7 @@ Run time: 0.03823590278625488 seconds.
 ```
 
 # example queries
+## SQL
 Projection: GET name, email FROM Customer
 
 Filtering:  GET name, email FROM Customer WHEN name LIKE %James
@@ -89,3 +90,10 @@ Grouping: GET gender, name FROM Customer GATHER_BY Customer.gender WHEN name LIK
 Aggregation: GET rating, CNT(rating) FROM Ticket GATHER_BY Ticket.rating
 
 Ordering: GET gender, name, age FROM Customer GATHER_BY Customer.gender WHEN name LIKE %James ASCEND_BY age
+
+Inserting: PUT 09900, Justin Chen, fdsfs@usc.edu, 23, Male IN Customer
+
+Deleting: DROP FROM Customer WHEN name = 'Justin Chen'
+
+Updating: CHANGE Customer WITH email = ggg@usc.edu, age = 43 WHEN name = 'Yolanda Miller'
+
